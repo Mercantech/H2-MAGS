@@ -7,7 +7,7 @@ Det er delt op i 5 mapper
 
 ## [Blazor](https://github.com/MAGS-Template/H2-Projekt/tree/main/Blazor)
 Her er størstedelen af jeres projekt, her har vi alt UI. 
-Blazor versionen er nu opdateret til .NET 8.0 som er LTS
+Blazor versionen kører med .NET 8.0 med WASM - altså at det er rent klientside Blazor
 
 ## [Domain Models](https://github.com/MAGS-Template/H2-Projekt/tree/main/DomainModels)
 Her er alle jeres klasser, som I skal bruge til jeres Blazor og API. 
@@ -24,5 +24,4 @@ ASP.NET Core Web API versionen er nu opdateret til .NET 8.0 som er LTS - Vi brug
 Vi skal skrive scripts som kan queries mod vores database som enten er hostet lokalt eller på en cloudplatform! Det er vigtigt at gemme dem, så vi bruger mappen her og gemmer dem som .SQL filer. De kan eksekveres med mange GUI's - personligt anbefaler jeg [SQLTools](https://www.notion.so/mercantec/VSCode-Extensions-f4e03a6568ee483f85d9fc018ba6baa7?pvs=4#e439f568d1fe4749afa04ee204f37ac9) som er en udvidelse til VSCode. [TablePlus](https://tableplus.com/) og [HeidiSQL](https://www.heidisql.com/) er også gode bud!
 
 ### Hosting
-Vi kigger på Hosting under H1 forløbet, men vores applikation her burde gerne være live på [Render.com - Blazor](https://h2blazor.onrender.com/) og [Render.com - API](https://h2api.onrender.com/swagger/index.html)! *Siden bliver inaktiv efter lidt tid, så hvis den ikke loader, er [containeren](https://www.notion.so/mercantec/Containers-a9c3613888d342cca0221c7e0f68a767) ved at starte op!*
-
+Både vores API og Frontend er hostet på 
