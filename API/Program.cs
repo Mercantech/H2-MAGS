@@ -1,3 +1,6 @@
+using API.DBContext;
+using Microsoft.EntityFrameworkCore;
+
 var builder = WebApplication.CreateBuilder(args);
 
 // Add services to the container.
@@ -12,6 +15,20 @@ builder.Services.AddCors(options =>
             .AllowAnyHeader()
             .AllowAnyMethod());
 });
+
+IConfiguration Configuration = builder.Configuration;
+
+string connectionString = Configuration.GetConnectionString("DefaultConnection");
+
+builder.Services.AddDbContext<HotelContext>(options =>
+    options.UseNpgsql(connectionString));
+
+// Bind ActiveDirectorySettings fra appsettings.json
+builder.Services.Configure<ActiveDirectorySettings>(
+    builder.Configuration.GetSection("ActiveDirectory"));
+
+// Registrer ActiveDirectoryService som en singleton eller scoped tjeneste
+builder.Services.AddScoped<ActiveDirectoryService>();
 
 // Learn more about configuring Swagger/OpenAPI at https://aka.ms/aspnetcore/swashbuckle
 builder.Services.AddEndpointsApiExplorer();
