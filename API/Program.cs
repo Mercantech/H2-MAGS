@@ -1,5 +1,9 @@
+using System.Text;
 using API.DBContext;
+using API.Services.Mapping.Users;
+using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.IdentityModel.Tokens;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -23,6 +27,10 @@ string connectionString = Configuration.GetConnectionString("DefaultConnection")
 builder.Services.AddDbContext<HotelContext>(options =>
     options.UseNpgsql(connectionString));
 
+// API.Services
+builder.Services.AddScoped<SignupService>();
+builder.Services.AddScoped<JWTService>();
+
 // Bind ActiveDirectorySettings fra appsettings.json
 builder.Services.Configure<ActiveDirectorySettings>(
     builder.Configuration.GetSection("ActiveDirectory"));
@@ -30,7 +38,29 @@ builder.Services.Configure<ActiveDirectorySettings>(
 // Registrer ActiveDirectoryService som en singleton eller scoped tjeneste
 builder.Services.AddScoped<ActiveDirectoryService>();
 
-// Learn more about configuring Swagger/OpenAPI at https://aka.ms/aspnetcore/swashbuckle
+// Configure JWT Authentication
+builder.Services.AddAuthentication(x =>
+{
+    x.DefaultAuthenticateScheme = JwtBearerDefaults.AuthenticationScheme;
+    x.DefaultChallengeScheme = JwtBearerDefaults.AuthenticationScheme;
+    x.DefaultScheme = JwtBearerDefaults.AuthenticationScheme;
+}).AddJwtBearer(x =>
+{
+    x.TokenValidationParameters = new TokenValidationParameters
+    {
+        ValidIssuer = Configuration["JwtSettings:Issuer"],
+        ValidAudience = Configuration["JwtSettings:Audience"],
+        IssuerSigningKey = new SymmetricSecurityKey
+        (
+            Encoding.UTF8.GetBytes(Configuration["JwtSettings:Key"])
+        ),
+        ValidateIssuer = true,
+        ValidateAudience = true,
+        ValidateLifetime = true,
+        ValidateIssuerSigningKey = true
+    };
+});
+
 builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen();
 

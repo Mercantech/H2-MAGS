@@ -6,10 +6,10 @@ using System.Threading.Tasks;
 
 namespace DomainModels.DTOs.Users
 {
-    public class SignUp
+    public class ADUser
     {
-        public string Email { get; set; }
         public string Name { get; set; }
-        public string Password { get; set; }
+        public string DomainMail { get; set; }
+        public List<string> Roles { get; set; }
     }
 }

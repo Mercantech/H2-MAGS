@@ -6,6 +6,7 @@ using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using API.DBContext;
+using API.Services.Mapping.Users;
 using DomainModels;
 using DomainModels.DTOs.Users;
 using Microsoft.CodeAnalysis.Scripting;
@@ -18,10 +19,15 @@ namespace API.Controllers
     {
         private readonly HotelContext _context;
         private readonly ActiveDirectoryService _adService;
-        public UsersController(HotelContext context, ActiveDirectoryService adService)
+        private readonly JWTService _jwtService;
+        private readonly SignupService _signupService;
+        public UsersController(HotelContext context, ActiveDirectoryService adService, JWTService jwtService, SignupService signupService)
         {
             _context = context;
             _adService = adService;
+            _jwtService = jwtService;
+            _signupService = signupService;
+
         }
 
         // GET: api/Users
@@ -76,11 +82,21 @@ namespace API.Controllers
             return NoContent();
         }
 
-        // POST: api/Users
-        // To protect from overposting attacks, see https://go.microsoft.com/fwlink/?linkid=2123754
-        [HttpPost]
-        public async Task<ActionResult<User>> PostUser(User user)
+        [HttpPost("register")]
+        public async Task<IActionResult> PostUser(SignUp userSignUp)
         {
+            if (await _context.Users.AnyAsync(u => u.Email == userSignUp.Email))
+            {
+                return Conflict(new { message = "Email is already in use." });
+            }
+
+            if (!_signupService.IsPasswordSecure(userSignUp.Password))
+            {
+                return Conflict(new { message = "Password is not secure." });
+            }
+
+            var user = _signupService.MapSignUpDTOToUser(userSignUp);
+
             _context.Users.Add(user);
             try
             {
@@ -98,7 +114,7 @@ namespace API.Controllers
                 }
             }
 
-            return CreatedAtAction("GetUser", new { id = user.Id }, user);
+            return Ok(new { user.Id, user.Email });
         }
 
         // DELETE: api/Users/5
@@ -132,7 +148,7 @@ namespace API.Controllers
                 return Unauthorized(new { message = "Invalid email or password." });
             }
 
-            var token = "Login virker!";//GenerateJwtToken(user);
+            var token = _jwtService.GenerateJwtToken(user);
             return Ok(new { token });
         }
 
@@ -140,8 +156,6 @@ namespace API.Controllers
         [HttpPost("loginAD")]
         public async Task<IActionResult> LoginOnAD([FromBody] Login login)
         {
-            Console.WriteLine("Test1");
-
             // Forsøg at validere brugeren mod AD
             bool isValidUser = _adService.ValidateUser(login.Email, login.Password);
 
@@ -153,13 +167,15 @@ namespace API.Controllers
             // Hent brugerens grupper fra AD
             var groups = _adService.GetGroups(login.Email);
 
-            var token = "Login virker!"; // Testbesked i stedet for en JWT-token
+            
 
-            // Returner en succesbesked sammen med brugerens grupper
+            var token = _jwtService.GenerateJwtTokenAD(login.Email, login.Email);
+
+
             return Ok(new
             {
                 token,
-                groups // Returnerer grupper som en liste
+                groups 
             });
         }
 
