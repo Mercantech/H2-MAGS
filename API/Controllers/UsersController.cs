@@ -54,12 +54,67 @@ namespace API.Controllers
         // PUT: api/Users/5
         // To protect from overposting attacks, see https://go.microsoft.com/fwlink/?linkid=2123754
         [HttpPut("{id}")]
-        public async Task<IActionResult> PutUser(string id, User user)
+        public async Task<IActionResult> PutUser(string id, UpdateUserDTO updateUserDto)
         {
-            if (id != user.Id)
+            if (!_signupService.IsValidEmail(updateUserDto.Email))
+            {
+                return BadRequest(new { message = "Ugyldig e-mailadresse." });
+            }
+
+            if (id != updateUserDto.Id)
             {
                 return BadRequest();
             }
+
+            var user = await _context.Users.FindAsync(id);
+            if (user == null)
+            {
+                return NotFound();
+            }
+
+            user.Email = updateUserDto.Email;
+            user.Name = updateUserDto.Name;
+            // Andre felter, der skal opdateres
+
+            _context.Entry(user).State = EntityState.Modified;
+
+            try
+            {
+                await _context.SaveChangesAsync();
+            }
+            catch (DbUpdateConcurrencyException)
+            {
+                if (!UserExists(id))
+                {
+                    return NotFound();
+                }
+                else
+                {
+                    throw;
+                }
+            }
+
+            return NoContent();
+        }
+
+        // PUT: api/Users/5/ResetPassword
+        [HttpPut("{id}/ResetPassword")]
+        public async Task<IActionResult> ResetPassword(string id, ResetPasswordDTO resetPasswordDto)
+        {
+            var user = await _context.Users.FindAsync(id);
+            if (user == null)
+            {
+                return NotFound();
+            }
+
+            if (!_signupService.IsPasswordSecure(resetPasswordDto.NewPassword))
+            {
+                return BadRequest(new { message = "Adgangskoden er ikke sikker nok." });
+            }
+
+            string hashedPassword = BCrypt.Net.BCrypt.HashPassword(resetPasswordDto.NewPassword);
+            user.HashedPassword = hashedPassword;
+            user.Salt = hashedPassword.Substring(0, 29);
 
             _context.Entry(user).State = EntityState.Modified;
 
@@ -85,15 +140,22 @@ namespace API.Controllers
         [HttpPost("register")]
         public async Task<IActionResult> PostUser(SignUp userSignUp)
         {
-            if (await _context.Users.AnyAsync(u => u.Email == userSignUp.Email))
+            if (!_signupService.IsValidEmail(userSignUp.Email))
             {
-                return Conflict(new { message = "Email is already in use." });
+                return BadRequest(new { message = "Ugyldig e-mailadresse." });
             }
 
             if (!_signupService.IsPasswordSecure(userSignUp.Password))
             {
-                return Conflict(new { message = "Password is not secure." });
+                return Conflict(new { message = "Adgangskoden er ikke sikker nok." });
             }
+
+            if (await _context.Users.AnyAsync(u => u.Email == userSignUp.Email))
+            {
+                return Conflict(new { message = "E-mailadressen er allerede i brug." });
+            }
+
+            
 
             var user = _signupService.MapSignUpDTOToUser(userSignUp);
 

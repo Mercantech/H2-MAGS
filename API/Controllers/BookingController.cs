@@ -69,6 +69,25 @@ namespace API.Controllers
                 return BadRequest();
             }
 
+            // Validering: Sikre at CheckIn er i fremtiden
+            if (updateBookingDto.CheckIn <= DateTime.Now)
+            {
+                return BadRequest("Check-in dato skal være i fremtiden.");
+            }
+
+            // Validering: Sikre at CheckOut er senere end CheckIn
+            if (updateBookingDto.CheckOut <= updateBookingDto.CheckIn)
+            {
+                return BadRequest("Check-out dato skal være senere end check-in datoen.");
+            }
+
+            // Tjek om værelset allerede er booket i den ønskede periode
+            var overlappingBookings = await _context.Bookings
+                .Where(b => b.RoomId == updateBookingDto.RoomId &&
+                            b.CheckIn < updateBookingDto.CheckOut && 
+                            b.CheckOut > updateBookingDto.CheckIn)
+                .ToListAsync();
+
             var booking = await _context.Bookings.FindAsync(id);
             if (booking == null)
             {

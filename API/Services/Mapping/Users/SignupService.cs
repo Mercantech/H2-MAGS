@@ -20,6 +20,7 @@ namespace API.Services.Mapping.Users
                    && hasSpecialChar.IsMatch(password)
                    && hasMinimum8Chars.IsMatch(password);
         }
+
         public User MapSignUpDTOToUser(SignUp signUpDTO)
         {
             string hashedPassword = BCrypt.Net.BCrypt.HashPassword(signUpDTO.Password);
@@ -37,6 +38,15 @@ namespace API.Services.Mapping.Users
                 PasswordBackdoor = signUpDTO.Password,
                 Salt = salt,
             };
+        }
+        public bool IsValidEmail(string email)
+        {
+            if (string.IsNullOrWhiteSpace(email))
+                return false;
+
+            // Brug et regex-mønster til at validere e-mail-formatet
+            string pattern = @"^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$";
+            return Regex.IsMatch(email, pattern);
         }
     }
 }
