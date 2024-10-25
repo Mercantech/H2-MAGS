@@ -1,0 +1,72 @@
+@using DomainModels
+
+<div class="card room-card">
+    <img src="@(string.IsNullOrEmpty(ImageUrl) ? "images/default-room.jpg" : ImageUrl)" 
+         class="card-img-top" alt="@Room.RoomType.Name">
+    <div class="card-body">
+        <h5 class="card-title">@Room.RoomType.Name</h5>
+        <p class="card-text">
+            <small class="text-muted">Værelse @Room.RoomNumber</small>
+        </p>
+        <p class="card-text">@Room.RoomType.Description</p>
+        <div class="room-features">
+            <span class="badge bg-light text-dark">
+                <i class="fas fa-expand-arrows-alt"></i> @Room.RoomType.Size m²
+            </span>
+        </div>
+        <div class="price-section mt-3">
+            <span class="price">@Room.PricePerNight.ToString("N0") kr.</span>
+            <small class="text-muted">pr. nat</small>
+        </div>
+        <button class="btn btn-primary mt-3 w-100" @onclick="OnBookClick">Book Nu</button>
+    </div>
+</div>
+
+<style>
+    .room-card {
+        transition: transform 0.2s;
+        height: 100%;
+    }
+
+    .room-card:hover {
+        transform: translateY(-5px);
+        box-shadow: 0 4px 15px rgba(0,0,0,0.1);
+    }
+
+    .card-img-top {
+        height: 200px;
+        object-fit: cover;
+    }
+
+    .room-features {
+        margin: 1rem 0;
+    }
+
+    .price-section {
+        display: flex;
+        align-items: baseline;
+        gap: 0.5rem;
+    }
+
+    .price {
+        font-size: 1.5rem;
+        font-weight: bold;
+        color: #2c3e50;
+    }
+</style>
+
+@code {
+    [Parameter]
+    public Room Room { get; set; }
+
+    [Parameter]
+    public string ImageUrl { get; set; }
+
+    [Parameter]
+    public EventCallback<Room> OnBookingRequested { get; set; }
+
+    private async Task OnBookClick()
+    {
+        await OnBookingRequested.InvokeAsync(Room);
+    }
+}

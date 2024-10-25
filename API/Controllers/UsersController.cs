@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.IdentityModel.Tokens.Jwt;
 using System.Linq;
 using System.Threading.Tasks;
 using Microsoft.AspNetCore.Http;
@@ -10,6 +11,7 @@ using API.Services.Mapping.Users;
 using DomainModels;
 using DomainModels.DTOs.Users;
 using Microsoft.CodeAnalysis.Scripting;
+using JwtRegisteredClaimNames = Microsoft.IdentityModel.JsonWebTokens.JwtRegisteredClaimNames;
 
 namespace API.Controllers
 {
@@ -210,8 +212,13 @@ namespace API.Controllers
                 return Unauthorized(new { message = "Invalid email or password." });
             }
 
-            var token = _jwtService.GenerateJwtToken(user);
-            return Ok(new { token });
+            var (accessToken, refreshToken) = _jwtService.GenerateTokens(user);
+            
+            return Ok(new { 
+                accessToken, 
+                refreshToken,
+                expiresIn = 30 
+            });
         }
 
         // POST: api/Users/loginAD
@@ -241,6 +248,44 @@ namespace API.Controllers
             });
         }
 
+        [HttpPost("refresh-token")]
+        public async Task<IActionResult> RefreshToken([FromBody] RefreshTokenRequest request)
+        {
+            try 
+            {
+                var handler = new JwtSecurityTokenHandler();
+                var jsonToken = handler.ReadToken(request.AccessToken) as JwtSecurityToken;
+                var userId = jsonToken?.Claims.First(claim => claim.Type == JwtRegisteredClaimNames.Sub).Value;
+                
+                if (userId == null)
+                {
+                    return BadRequest(new { message = "Invalid token format" });
+                }
 
+                var user = await _context.Users.SingleOrDefaultAsync(u => u.Id == userId);
+                
+                if (user == null)
+                {
+                    return NotFound(new { message = "User not found" });
+                }
+
+                if (!_jwtService.ValidateRefreshToken(request.RefreshToken))
+                {
+                    return Unauthorized(new { message = "Invalid refresh token" });
+                }
+
+                var (accessToken, newRefreshToken) = _jwtService.GenerateTokens(user);
+
+                return Ok(new { 
+                    accessToken, 
+                    refreshToken = newRefreshToken,
+                    expiresIn = 30
+                });
+            }
+            catch (Exception)
+            {
+                return BadRequest(new { message = "Invalid token" });
+            }
+        }
     }
 }

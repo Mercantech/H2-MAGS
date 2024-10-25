@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
@@ -7,6 +7,8 @@ using Microsoft.EntityFrameworkCore;
 using API.DBContext;
 using DomainModels;
 using DomainModels.DTOs.Booking;
+using DomainModels.DTOs.Room;
+using DomainModels.DTOs.RoomType;
 
 namespace API.Controllers
 {
@@ -125,23 +127,26 @@ namespace API.Controllers
         [HttpPost]
         public async Task<ActionResult<CreateBookingDTO>> PostBooking(CreateBookingDTO createBookingDto)
         {
+            // Konverter datoer til UTC
+            var checkInUtc = DateTime.SpecifyKind(createBookingDto.CheckIn, DateTimeKind.Utc);
+            var checkOutUtc = DateTime.SpecifyKind(createBookingDto.CheckOut, DateTimeKind.Utc);
+
             // Validering: Sikre at CheckIn er i fremtiden
-            if (createBookingDto.CheckIn <= DateTime.Now)
+            if (checkInUtc <= DateTime.UtcNow)
             {
                 return BadRequest("Check-in dato skal være i fremtiden.");
             }
 
             // Validering: Sikre at CheckOut er senere end CheckIn
-            if (createBookingDto.CheckOut <= createBookingDto.CheckIn)
+            if (checkOutUtc <= checkInUtc)
             {
                 return BadRequest("Check-out dato skal være senere end check-in datoen.");
             }
 
-            // Tjek om værelset allerede er booket i den ønskede periode
             var overlappingBookings = await _context.Bookings
                 .Where(b => b.RoomId == createBookingDto.RoomId &&
-                            b.CheckIn < createBookingDto.CheckOut && 
-                            b.CheckOut > createBookingDto.CheckIn)
+                            b.CheckIn < checkOutUtc && 
+                            b.CheckOut > checkInUtc)
                 .ToListAsync();
 
             if (overlappingBookings.Any())
@@ -154,8 +159,10 @@ namespace API.Controllers
                 Id = Guid.NewGuid().ToString("N"),
                 UserId = createBookingDto.UserId,
                 RoomId = createBookingDto.RoomId,
-                CheckIn = createBookingDto.CheckIn,
-                CheckOut = createBookingDto.CheckOut,
+                CheckIn = checkInUtc,
+                CheckOut = checkOutUtc,
+                CreatedAt = DateTime.UtcNow,
+                UpdatedAt = DateTime.UtcNow
             };
 
             _context.Bookings.Add(booking);
@@ -183,6 +190,65 @@ namespace API.Controllers
         private bool BookingExists(string id)
         {
             return _context.Bookings.Any(e => e.Id == id);
+        }
+
+        // GET: api/Bookings/user/{userId}
+        [HttpGet("user/{userId}")]
+        public async Task<ActionResult<IEnumerable<GetBookingDTO>>> GetUserBookings(string userId)
+        {
+            var userExists = await _context.Users.AnyAsync(u => u.Id == userId);
+            if (!userExists)
+            {
+                return NotFound("Bruger ikke fundet");
+            }
+
+            var bookings = await _context.Bookings
+                .Include(b => b.Room)
+                    .ThenInclude(r => r.RoomType)
+                .Where(b => b.UserId == userId)
+                .OrderBy(b => b.CheckIn)
+                .Select(b => new GetBookingDTO
+                {
+                    Id = b.Id,
+                    UserId = b.UserId,
+                    RoomId = b.RoomId,
+                    CheckIn = DateTime.SpecifyKind(b.CheckIn, DateTimeKind.Utc).ToLocalTime(),
+                    CheckOut = DateTime.SpecifyKind(b.CheckOut, DateTimeKind.Utc).ToLocalTime(),
+                    RoomDetails = new RoomDetailsDTO
+                    {
+                        Id = b.Room.Id,
+                        RoomNumber = b.Room.RoomNumber,
+                        RoomTypeId = b.Room.RoomTypeId,
+                        PricePerNight = b.Room.PricePerNight,
+                        RoomType = new GetRoomTypeDTO
+                        {
+                            Id = b.Room.RoomType.Id,
+                            Name = b.Room.RoomType.Name,
+                            Description = b.Room.RoomType.Description
+                        }
+                    },
+                    TotalNights = (b.CheckOut - b.CheckIn).Days,
+                    TotalPrice = b.Room.PricePerNight * (b.CheckOut - b.CheckIn).Days
+                })
+                .ToListAsync();
+
+            foreach (var booking in bookings)
+            {
+                booking.Status = DetermineBookingStatus(booking.CheckIn, booking.CheckOut);
+            }
+
+            return bookings;
+        }
+
+        private static string DetermineBookingStatus(DateTime checkIn, DateTime checkOut)
+        {
+            var now = DateTime.Now;
+            
+            if (now > checkOut)
+                return "Afsluttet";
+            if (now >= checkIn && now <= checkOut)
+                return "Aktiv";
+            return "Kommende";
         }
     }
 }

@@ -8,7 +8,7 @@ using API.DBContext;
 using DomainModels;
 using DomainModels.DTOs;
 using DomainModels.DTOs.RoomType;
-
+using Microsoft.AspNetCore.Authorization;
 namespace API.Controllers
 {
     [Route("api/[controller]")]
