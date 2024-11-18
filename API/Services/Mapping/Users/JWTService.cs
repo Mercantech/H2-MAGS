@@ -24,19 +24,27 @@ namespace API.Services.Mapping.Users
                 new Claim(ClaimTypes.Name, user.Name)
             };
 
-            var key = new SymmetricSecurityKey(Encoding.UTF8.GetBytes
-                (_configuration["JwtSettings:Key"]));
+            var key = new SymmetricSecurityKey(
+                Encoding.UTF8.GetBytes(
+                    Environment.GetEnvironmentVariable("JWT_KEY")
+                        ?? _configuration["JwtSettings:Key"]
+                )
+            );
             var creds = new SigningCredentials(key, SecurityAlgorithms.HmacSha256);
 
             var token = new JwtSecurityToken(
-                _configuration["JwtSettings:Issuer"],
-                _configuration["JwtSettings:Audience"],
+                Environment.GetEnvironmentVariable("JWT_ISSUER")
+                    ?? _configuration["JwtSettings:Issuer"],
+                Environment.GetEnvironmentVariable("JWT_AUDIENCE")
+                    ?? _configuration["JwtSettings:Audience"],
                 claims,
                 expires: DateTime.Now.AddMinutes(30),
-                signingCredentials: creds);
+                signingCredentials: creds
+            );
 
             return new JwtSecurityTokenHandler().WriteToken(token);
         }
+
         public string GenerateJwtTokenAD(string userId, string userName)
         {
             var claims = new[]
@@ -46,16 +54,23 @@ namespace API.Services.Mapping.Users
                 new Claim(ClaimTypes.Name, userName)
             };
 
-            var key = new SymmetricSecurityKey(Encoding.UTF8.GetBytes
-                (_configuration["JwtSettings:Key"]));
+            var key = new SymmetricSecurityKey(
+                Encoding.UTF8.GetBytes(
+                    Environment.GetEnvironmentVariable("JWT_KEY")
+                        ?? _configuration["JwtSettings:Key"]
+                )
+            );
             var creds = new SigningCredentials(key, SecurityAlgorithms.HmacSha256);
 
             var token = new JwtSecurityToken(
-                _configuration["JwtSettings:Issuer"],
-                _configuration["JwtSettings:Audience"],
+                Environment.GetEnvironmentVariable("JWT_ISSUER")
+                    ?? _configuration["JwtSettings:Issuer"],
+                Environment.GetEnvironmentVariable("JWT_AUDIENCE")
+                    ?? _configuration["JwtSettings:Audience"],
                 claims,
                 expires: DateTime.Now.AddMinutes(30),
-                signingCredentials: creds);
+                signingCredentials: creds
+            );
 
             return new JwtSecurityTokenHandler().WriteToken(token);
         }
@@ -73,18 +88,21 @@ namespace API.Services.Mapping.Users
             {
                 new Claim(JwtRegisteredClaimNames.Sub, userId),
                 new Claim(JwtRegisteredClaimNames.Jti, Guid.NewGuid().ToString()),
-                new Claim("tokenType", "refresh")  // For at identificere at dette er en refresh token
+                new Claim("tokenType", "refresh") // For at identificere at dette er en refresh token
             };
 
-            var key = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(_configuration["JwtSettings:Key"]));
+            var key = new SymmetricSecurityKey(
+                Encoding.UTF8.GetBytes(_configuration["JwtSettings:Key"])
+            );
             var creds = new SigningCredentials(key, SecurityAlgorithms.HmacSha256);
 
             var token = new JwtSecurityToken(
                 _configuration["JwtSettings:Issuer"],
                 _configuration["JwtSettings:Audience"],
                 claims,
-                expires: DateTime.Now.AddDays(7),  // Længere udløbstid for refresh tokens
-                signingCredentials: creds);
+                expires: DateTime.Now.AddDays(7), // Længere udløbstid for refresh tokens
+                signingCredentials: creds
+            );
 
             return new JwtSecurityTokenHandler().WriteToken(token);
         }
@@ -94,26 +112,38 @@ namespace API.Services.Mapping.Users
             try
             {
                 var tokenHandler = new JwtSecurityTokenHandler();
-                var key = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(_configuration["JwtSettings:Key"]));
-                
+                var key = new SymmetricSecurityKey(
+                    Encoding.UTF8.GetBytes(
+                        Environment.GetEnvironmentVariable("JWT_KEY")
+                            ?? _configuration["JwtSettings:Key"]
+                    )
+                );
+
                 var tokenValidationParameters = new TokenValidationParameters
                 {
                     ValidateIssuerSigningKey = true,
                     IssuerSigningKey = key,
                     ValidateIssuer = true,
-                    ValidIssuer = _configuration["JwtSettings:Issuer"],
+                    ValidIssuer =
+                        Environment.GetEnvironmentVariable("JWT_ISSUER")
+                        ?? _configuration["JwtSettings:Issuer"],
                     ValidateAudience = true,
-                    ValidAudience = _configuration["JwtSettings:Audience"],
+                    ValidAudience =
+                        Environment.GetEnvironmentVariable("JWT_AUDIENCE")
+                        ?? _configuration["JwtSettings:Audience"],
                     ValidateLifetime = true,
                     ClockSkew = TimeSpan.Zero
                 };
 
-                // Valider token og tjek om det er en refresh token
-                var principal = tokenHandler.ValidateToken(refreshToken, tokenValidationParameters, out var validatedToken);
+                var principal = tokenHandler.ValidateToken(
+                    refreshToken,
+                    tokenValidationParameters,
+                    out var validatedToken
+                );
                 var jwtToken = validatedToken as JwtSecurityToken;
-                
-                return jwtToken != null && 
-                       jwtToken.Claims.Any(x => x.Type == "tokenType" && x.Value == "refresh");
+
+                return jwtToken != null
+                    && jwtToken.Claims.Any(x => x.Type == "tokenType" && x.Value == "refresh");
             }
             catch
             {
