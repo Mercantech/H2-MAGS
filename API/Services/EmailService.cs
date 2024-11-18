@@ -22,7 +22,13 @@ public class EmailService
 
     private async Task<string> GetEmailTemplate(string confirmationUrl)
     {
-        string template = await File.ReadAllTextAsync(_templatePath);
+        var assembly = typeof(EmailService).Assembly;
+        var resourceName = "API.Templates.EmailConfirmation.html";
+
+        using var stream = assembly.GetManifestResourceStream(resourceName);
+        using var reader = new StreamReader(stream);
+
+        string template = await reader.ReadToEndAsync();
         return template.Replace("{confirmationUrl}", confirmationUrl);
     }
 

@@ -30,4 +30,8 @@
     <ProjectReference Include="..\DomainModels\DomainModels.csproj" />
   </ItemGroup>
 
+  <ItemGroup>
+    <EmbeddedResource Include="Templates\EmailConfirmation.html" />
+  </ItemGroup>
+
 </Project>
