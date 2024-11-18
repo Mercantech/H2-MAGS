@@ -14,6 +14,7 @@ public class EmailService
         _configuration = configuration;
         _templatePath = Path.Combine(
             environment.ContentRootPath,
+            "API",
             "Templates",
             "EmailConfirmation.html"
         );
