@@ -1,20 +1,38 @@
+using System.IO;
 using System.Net;
 using System.Net.Mail;
+using Microsoft.AspNetCore.Hosting;
 using Microsoft.Extensions.Configuration;
 
 public class EmailService
 {
     private readonly IConfiguration _configuration;
+    private readonly string _templatePath;
 
-    public EmailService(IConfiguration configuration)
+    public EmailService(IConfiguration configuration, IWebHostEnvironment environment)
     {
         _configuration = configuration;
+        _templatePath = Path.Combine(
+            environment.ContentRootPath,
+            "Templates",
+            "EmailConfirmation.html"
+        );
+    }
+
+    private async Task<string> GetEmailTemplate(string confirmationUrl)
+    {
+        string template = await File.ReadAllTextAsync(_templatePath);
+        return template.Replace("{confirmationUrl}", confirmationUrl);
     }
 
     public async Task SendConfirmationEmail(string email, string confirmationToken)
     {
         try
         {
+            var confirmationUrl =
+                $"https://{Environment.GetEnvironmentVariable("APPLICATION_BASE_URL") ?? _configuration["Application:BaseUrl"]}/api/users/confirm-email?token={confirmationToken}&email={email}";
+            var emailBody = await GetEmailTemplate(confirmationUrl);
+
             var smtpClient = new SmtpClient
             {
                 Host =
@@ -37,15 +55,12 @@ public class EmailService
 
             var mailMessage = new MailMessage
             {
-                From = new MailAddress(_configuration["Gmail:From"]),
-                Subject = "Bekræft din email",
-                Body =
-                    $@"
-                    <h2>Velkommen til vores hotel-booking system!</h2>
-                    <p>Klik på følgende link for at bekræfte din email:</p>
-                    <a href='https://{_configuration["Application:BaseUrl"]}/api/users/confirm-email?token={confirmationToken}&email={email}'>
-                        Bekræft min email
-                    </a>",
+                From = new MailAddress(
+                    Environment.GetEnvironmentVariable("GMAIL_FROM") ?? _configuration["Gmail:From"]
+                ),
+                Subject =
+                    Environment.GetEnvironmentVariable("EMAIL_SUBJECT") ?? "Bekræft din email",
+                Body = emailBody,
                 IsBodyHtml = true
             };
             mailMessage.To.Add(email);
