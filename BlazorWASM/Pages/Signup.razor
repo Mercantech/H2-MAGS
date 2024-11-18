@@ -1,0 +1,165 @@
+@page "/signup"
+@inject HttpClient Http
+@inject NavigationManager NavigationManager
+@inject ILocalStorageService LocalStorage
+@inject IAuthService AuthService
+
+<div class="container">
+    <div class="row justify-content-center mt-5">
+        <div class="col-md-6">
+            <div class="card">
+                <div class="card-body">
+                    <h3 class="card-title text-center mb-4">Opret ny bruger</h3>
+
+                    @if (!string.IsNullOrEmpty(errorMessage))
+                    {
+                        <div class="alert alert-danger">
+                            @errorMessage
+                        </div>
+                    }
+
+                    <EditForm Model="@signUpModel" OnValidSubmit="HandleSignup">
+                        <DataAnnotationsValidator />
+
+                        <div class="mb-3">
+                            <label for="name" class="form-label">Navn</label>
+                            <InputText id="name" class="form-control" @bind-Value="signUpModel.Name" />
+                            <ValidationMessage For="@(() => signUpModel.Name)" />
+                        </div>
+
+                        <div class="mb-3">
+                            <label for="email" class="form-label">Email</label>
+                            <InputText id="email" class="form-control" @bind-Value="signUpModel.Email" />
+                            <ValidationMessage For="@(() => signUpModel.Email)" />
+                        </div>
+
+                        <div class="mb-3">
+                            <label for="password" class="form-label">Adgangskode</label>
+                            <InputText type="password" id="password" class="form-control" @bind-Value="signUpModel.Password" />
+                            <ValidationMessage For="@(() => signUpModel.Password)" />
+                            <small class="text-muted">
+                                Adgangskoden skal indeholde mindst 8 tegn, et tal, et stort bogstav og et specialtegn.
+                            </small>
+                        </div>
+
+                        <div class="mb-3">
+                            <label for="confirmPassword" class="form-label">Bekræft adgangskode</label>
+                            <InputText type="password" id="confirmPassword" class="form-control" @bind-Value="signUpModel.ConfirmPassword" />
+                            <ValidationMessage For="@(() => signUpModel.ConfirmPassword)" />
+                        </div>
+
+                        <div class="mb-3 form-check">
+                            <InputCheckbox id="autoLogin" class="form-check-input" @bind-Value="signUpModel.AutoLogin" />
+                            <label class="form-check-label" for="autoLogin">
+                                Log mig ind automatisk efter oprettelse
+                            </label>
+                        </div>
+
+                        <div class="d-grid gap-2">
+                            <button type="submit" class="btn btn-primary" disabled="@isLoading">
+                                @if (isLoading)
+                                {
+                                    <span class="spinner-border spinner-border-sm" role="status" aria-hidden="true"></span>
+                                    <span class="ms-2">@loadingMessage</span>
+                                }
+                                else
+                                {
+                                    <span>Opret bruger</span>
+                                }
+                            </button>
+                        </div>
+                    </EditForm>
+
+                    <div class="text-center mt-3">
+                        <a href="login">Har du allerede en konto? Log ind her</a>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+@code {
+    private SignUpModel signUpModel = new();
+    private string errorMessage = string.Empty;
+    private bool isLoading = false;
+    private string loadingMessage = string.Empty;
+
+    private async Task HandleSignup()
+    {
+        try
+        {
+            isLoading = true;
+            errorMessage = string.Empty;
+            loadingMessage = "Opretter bruger...";
+
+            var response = await Http.PostAsJsonAsync("api/users/register", new
+            {
+                signUpModel.Name,
+                signUpModel.Email,
+                signUpModel.Password
+            });
+
+            if (response.IsSuccessStatusCode)
+            {
+                if (signUpModel.AutoLogin)
+                {
+                    loadingMessage = "Logger ind...";
+                    var loginSuccess = await AuthService.LoginAsync(signUpModel.Email, signUpModel.Password);
+                    
+                    if (loginSuccess)
+                    {
+                        NavigationManager.NavigateTo("/");
+                        return;
+                    }
+                    else
+                    {
+                        // Hvis auto-login fejler, sender vi brugeren til login siden
+                        NavigationManager.NavigateTo("/login");
+                        return;
+                    }
+                }
+                
+                NavigationManager.NavigateTo("/login");
+            }
+            else
+            {
+                var error = await response.Content.ReadFromJsonAsync<Dictionary<string, string>>();
+                errorMessage = error?["message"] ?? "Der skete en fejl ved oprettelsen af brugeren.";
+            }
+        }
+        catch (Exception ex)
+        {
+            errorMessage = "Der skete en uventet fejl. Prøv igen senere.";
+            Console.WriteLine($"Signup error: {ex.Message}");
+        }
+        finally
+        {
+            isLoading = false;
+            loadingMessage = string.Empty;
+        }
+    }
+
+    public class SignUpModel
+    {
+        [Required(ErrorMessage = "Navn er påkrævet")]
+        [StringLength(100, ErrorMessage = "Navnet må maksimalt være 100 tegn")]
+        public string Name { get; set; } = string.Empty;
+
+        [Required(ErrorMessage = "Email er påkrævet")]
+        [EmailAddress(ErrorMessage = "Ugyldig email adresse")]
+        public string Email { get; set; } = string.Empty;
+
+        [Required(ErrorMessage = "Adgangskode er påkrævet")]
+        [StringLength(100, MinimumLength = 8, ErrorMessage = "Adgangskoden skal være mindst 8 tegn")]
+        [RegularExpression(@"^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[@$!%*?&])[A-Za-z\d@$!%*?&]{8,}$",
+            ErrorMessage = "Adgangskoden skal indeholde mindst et stort bogstav, et tal og et specialtegn")]
+        public string Password { get; set; } = string.Empty;
+
+        [Required(ErrorMessage = "Bekræft adgangskode er påkrævet")]
+        [Compare(nameof(Password), ErrorMessage = "Adgangskoderne matcher ikke")]
+        public string ConfirmPassword { get; set; } = string.Empty;
+
+        public bool AutoLogin { get; set; } = true;
+    }
+}

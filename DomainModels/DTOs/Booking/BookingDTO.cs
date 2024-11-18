@@ -4,6 +4,7 @@ using System.ComponentModel.DataAnnotations;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
+using DomainModels.DTOs.Room;  // Tilføj denne using statement
 
 namespace DomainModels.DTOs.Booking
 {
@@ -14,6 +15,10 @@ namespace DomainModels.DTOs.Booking
             public string RoomId { get; set; }
             public DateTime CheckIn { get; set; }
             public DateTime CheckOut { get; set; }
+            public RoomDetailsDTO RoomDetails { get; set; }  // Bruger den eksisterende RoomDetailsDTO
+            public int TotalNights { get; set; }
+            public decimal TotalPrice { get; set; }
+            public string Status { get; set; }
         }
 
         public class CreateBookingDTO

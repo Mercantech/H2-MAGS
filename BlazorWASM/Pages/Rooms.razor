@@ -1,0 +1,48 @@
+@page "/rooms"
+@inject HttpClient Http
+
+<div class="container mt-4">
+    <h2>Tilgængelige værelser</h2>
+    
+    <div class="row g-4 mt-3">
+        @if (rooms != null)
+        {
+            @foreach (var room in rooms)
+            {
+                <div class="col-md-4">
+                    <RoomCard 
+                        Room="room" 
+                        ImageUrl="@($"images/rooms/{room.RoomType.Name.ToLower()}.jpg")"
+                        OnBookingRequested="HandleBookingRequest" />
+                </div>
+            }
+        }
+        else
+        {
+            <p>Indlæser værelser...</p>
+        }
+    </div>
+</div>
+
+@code {
+    private List<Room> rooms;
+
+    protected override async Task OnInitializedAsync()
+    {
+        try
+        {
+            rooms = await Http.GetFromJsonAsync<List<Room>>("api/rooms");
+        }
+        catch (Exception ex)
+        {
+            // Håndter fejl her
+            Console.WriteLine($"Fejl ved hentning af værelser: {ex.Message}");
+        }
+    }
+
+    private async Task HandleBookingRequest(Room room)
+    {
+        // Implementer booking logik her
+        // F.eks. navigation til booking side eller åbning af booking dialog
+    }
+}

@@ -1,0 +1,179 @@
+@page "/bookings"
+@inject HttpClient Http
+@inject IAuthService AuthService
+@inject NavigationManager NavigationManager
+@using System.IdentityModel.Tokens.Jwt
+@using System.Security.Claims
+
+<h3 class="mb-4">Mine Bookinger</h3>
+
+@if (isLoading)
+{
+    <div class="d-flex justify-content-center">
+        <div class="spinner-border" role="status">
+            <span class="visually-hidden">Indlæser...</span>
+        </div>
+    </div>
+}
+else if (errorMessage != null)
+{
+    <div class="alert alert-danger" role="alert">
+        @errorMessage
+    </div>
+}
+else if (bookings == null || !bookings.Any())
+{
+    <div class="alert alert-info" role="alert">
+        Du har ingen bookinger endnu. 
+        <a href="/rooms" class="alert-link">Se vores værelser</a>
+    </div>
+}
+else
+{
+    <div class="row row-cols-1 row-cols-md-2 g-4">
+        @foreach (var booking in bookings.OrderBy(b => b.CheckIn))
+        {
+            <div class="col">
+                <div class="card h-100 @GetStatusClass(booking.Status)">
+                    <div class="card-body">
+                        <div class="d-flex justify-content-between align-items-start">
+                            <h5 class="card-title">Værelse @booking.RoomDetails.RoomNumber</h5>
+                            <span class="badge @GetStatusBadgeClass(booking.Status)">@booking.Status</span>
+                        </div>
+                        <h6 class="card-subtitle mb-2 text-muted">@booking.RoomDetails.RoomType.Name</h6>
+                        
+                        <div class="mt-3">
+                            <p class="mb-1">
+                                <i class="bi bi-calendar-check"></i>
+                                Check-in: @booking.CheckIn.ToString("dd/MM/yyyy")
+                            </p>
+                            <p class="mb-1">
+                                <i class="bi bi-calendar-x"></i>
+                                Check-ud: @booking.CheckOut.ToString("dd/MM/yyyy")
+                            </p>
+                            <p class="mb-1">
+                                <i class="bi bi-moon-stars"></i>
+                                Antal nætter: @booking.TotalNights
+                            </p>
+                            <p class="mb-1">
+                                <i class="bi bi-cash"></i>
+                                Pris pr. nat: @booking.RoomDetails.PricePerNight.ToString("C0")
+                            </p>
+                            <p class="card-text fw-bold mt-2">
+                                Total pris: @booking.TotalPrice.ToString("C0")
+                            </p>
+                        </div>
+                    </div>
+                    <div class="card-footer">
+                        @if (booking.Status == "Kommende")
+                        {
+                            <button class="btn btn-danger" @onclick="() => HandleCancelBooking(booking.Id)">
+                                <i class="bi bi-x-circle"></i> Annuller booking
+                            </button>
+                        }
+                    </div>
+                </div>
+            </div>
+        }
+    </div>
+}
+
+<style>
+    .card {
+        transition: transform 0.2s;
+    }
+    .card:hover {
+        transform: translateY(-5px);
+    }
+    .status-active {
+        border-left: 4px solid #198754;
+    }
+    .status-upcoming {
+        border-left: 4px solid #0d6efd;
+    }
+    .status-completed {
+        border-left: 4px solid #6c757d;
+    }
+    .card i {
+        margin-right: 8px;
+    }
+</style>
+
+@code {
+    private List<GetBookingDTO> bookings;
+    private bool isLoading = true;
+    private string errorMessage;
+    private string userId;
+
+    protected override async Task OnInitializedAsync()
+    {
+        try
+        {
+            var token = await AuthService.GetTokenAsync();
+            if (string.IsNullOrEmpty(token))
+            {
+                NavigationManager.NavigateTo("/login");
+                return;
+            }
+
+            // Udtræk bruger ID fra token
+            var handler = new JwtSecurityTokenHandler();
+            var jwtToken = handler.ReadJwtToken(token);
+            userId = jwtToken.Claims.First(c => c.Type == JwtRegisteredClaimNames.Sub).Value;
+
+            await LoadBookings();
+        }
+        catch (Exception ex)
+        {
+            errorMessage = "Der opstod en fejl ved indlæsning af dine bookinger.";
+            Console.WriteLine($"Error: {ex.Message}");
+        }
+        finally
+        {
+            isLoading = false;
+        }
+    }
+
+    private async Task LoadBookings()
+    {
+        var response = await Http.GetAsync($"api/Bookings/user/{userId}");
+        if (response.IsSuccessStatusCode)
+        {
+            bookings = await response.Content.ReadFromJsonAsync<List<GetBookingDTO>>();
+        }
+        else
+        {
+            errorMessage = "Kunne ikke hente dine bookinger.";
+        }
+    }
+
+    private async Task HandleCancelBooking(string bookingId)
+    {
+
+        var response = await Http.DeleteAsync($"api/Bookings/{bookingId}");
+        if (response.IsSuccessStatusCode)
+        {
+            await LoadBookings();
+        }
+        else
+        {
+            errorMessage = "Kunne ikke annullere bookingen.";
+        }
+    }
+
+    private string GetStatusClass(string status) => status switch
+    {
+        "Aktiv" => "status-active",
+        "Kommende" => "status-upcoming",
+        "Afsluttet" => "status-completed",
+        _ => ""
+    };
+
+    private string GetStatusBadgeClass(string status) => status switch
+    {
+        "Aktiv" => "bg-success",
+        "Kommende" => "bg-primary",
+        "Afsluttet" => "bg-secondary",
+        _ => "bg-secondary"
+    };
+}

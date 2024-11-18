@@ -59,5 +59,66 @@ namespace API.Services.Mapping.Users
 
             return new JwtSecurityTokenHandler().WriteToken(token);
         }
+
+        public (string accessToken, string refreshToken) GenerateTokens(User user)
+        {
+            var accessToken = GenerateJwtToken(user);
+            var refreshToken = GenerateRefreshToken(user.Id);
+            return (accessToken, refreshToken);
+        }
+
+        private string GenerateRefreshToken(string userId)
+        {
+            var claims = new[]
+            {
+                new Claim(JwtRegisteredClaimNames.Sub, userId),
+                new Claim(JwtRegisteredClaimNames.Jti, Guid.NewGuid().ToString()),
+                new Claim("tokenType", "refresh")  // For at identificere at dette er en refresh token
+            };
+
+            var key = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(_configuration["JwtSettings:Key"]));
+            var creds = new SigningCredentials(key, SecurityAlgorithms.HmacSha256);
+
+            var token = new JwtSecurityToken(
+                _configuration["JwtSettings:Issuer"],
+                _configuration["JwtSettings:Audience"],
+                claims,
+                expires: DateTime.Now.AddDays(7),  // Længere udløbstid for refresh tokens
+                signingCredentials: creds);
+
+            return new JwtSecurityTokenHandler().WriteToken(token);
+        }
+
+        public bool ValidateRefreshToken(string refreshToken)
+        {
+            try
+            {
+                var tokenHandler = new JwtSecurityTokenHandler();
+                var key = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(_configuration["JwtSettings:Key"]));
+                
+                var tokenValidationParameters = new TokenValidationParameters
+                {
+                    ValidateIssuerSigningKey = true,
+                    IssuerSigningKey = key,
+                    ValidateIssuer = true,
+                    ValidIssuer = _configuration["JwtSettings:Issuer"],
+                    ValidateAudience = true,
+                    ValidAudience = _configuration["JwtSettings:Audience"],
+                    ValidateLifetime = true,
+                    ClockSkew = TimeSpan.Zero
+                };
+
+                // Valider token og tjek om det er en refresh token
+                var principal = tokenHandler.ValidateToken(refreshToken, tokenValidationParameters, out var validatedToken);
+                var jwtToken = validatedToken as JwtSecurityToken;
+                
+                return jwtToken != null && 
+                       jwtToken.Claims.Any(x => x.Type == "tokenType" && x.Value == "refresh");
+            }
+            catch
+            {
+                return false;
+            }
+        }
     }
 }
