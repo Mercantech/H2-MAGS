@@ -3,14 +3,14 @@ using System.Collections.Generic;
 using System.IdentityModel.Tokens.Jwt;
 using System.Linq;
 using System.Threading.Tasks;
-using Microsoft.AspNetCore.Http;
-using Microsoft.AspNetCore.Mvc;
-using Microsoft.EntityFrameworkCore;
 using API.DBContext;
 using API.Services.Mapping.Users;
 using DomainModels;
 using DomainModels.DTOs.Users;
+using Microsoft.AspNetCore.Http;
+using Microsoft.AspNetCore.Mvc;
 using Microsoft.CodeAnalysis.Scripting;
+using Microsoft.EntityFrameworkCore;
 using JwtRegisteredClaimNames = Microsoft.IdentityModel.JsonWebTokens.JwtRegisteredClaimNames;
 
 namespace API.Controllers
@@ -23,13 +23,21 @@ namespace API.Controllers
         private readonly ActiveDirectoryService _adService;
         private readonly JWTService _jwtService;
         private readonly SignupService _signupService;
-        public UsersController(HotelContext context, ActiveDirectoryService adService, JWTService jwtService, SignupService signupService)
+        private readonly EmailService _emailService;
+
+        public UsersController(
+            HotelContext context,
+            ActiveDirectoryService adService,
+            JWTService jwtService,
+            SignupService signupService,
+            EmailService emailService
+        )
         {
             _context = context;
             _adService = adService;
             _jwtService = jwtService;
             _signupService = signupService;
-
+            _emailService = emailService;
         }
 
         // GET: api/Users
@@ -157,14 +165,27 @@ namespace API.Controllers
                 return Conflict(new { message = "E-mailadressen er allerede i brug." });
             }
 
-            
-
             var user = _signupService.MapSignUpDTOToUser(userSignUp);
 
+            user.EmailConfirmationToken = Guid.NewGuid().ToString();
+            user.IsEmailConfirmed = false;
+
             _context.Users.Add(user);
+
             try
             {
                 await _context.SaveChangesAsync();
+
+                await _emailService.SendConfirmationEmail(user.Email, user.EmailConfirmationToken);
+
+                return Ok(
+                    new
+                    {
+                        user.Id,
+                        user.Email,
+                        message = "Bruger oprettet. Tjek venligst din email for at bekræfte din konto."
+                    }
+                );
             }
             catch (DbUpdateException)
             {
@@ -172,13 +193,31 @@ namespace API.Controllers
                 {
                     return Conflict();
                 }
-                else
-                {
-                    throw;
-                }
+                throw;
+            }
+        }
+
+        // Tilføj nyt endpoint til email bekræftelse
+        [HttpGet("confirm-email")]
+        public async Task<IActionResult> ConfirmEmail(
+            [FromQuery] string token,
+            [FromQuery] string email
+        )
+        {
+            var user = await _context.Users.SingleOrDefaultAsync(u =>
+                u.Email == email && u.EmailConfirmationToken == token
+            );
+
+            if (user == null)
+            {
+                return BadRequest(new { message = "Ugyldigt token eller email" });
             }
 
-            return Ok(new { user.Id, user.Email });
+            user.IsEmailConfirmed = true;
+            user.EmailConfirmationToken = null;
+            await _context.SaveChangesAsync();
+
+            return Ok(new { message = "Email er blevet bekræftet. Du kan nu logge ind." });
         }
 
         // DELETE: api/Users/5
@@ -207,18 +246,32 @@ namespace API.Controllers
         public async Task<IActionResult> Login(Login login)
         {
             var user = await _context.Users.SingleOrDefaultAsync(u => u.Email == login.Email);
+
             if (user == null || !BCrypt.Net.BCrypt.Verify(login.Password, user.HashedPassword))
             {
-                return Unauthorized(new { message = "Invalid email or password." });
+                return Unauthorized(new { message = "Ugyldig email eller adgangskode." });
+            }
+
+            if (!user.IsEmailConfirmed)
+            {
+                return Unauthorized(
+                    new
+                    {
+                        message = "Email er ikke bekræftet. Tjek venligst din email for bekræftelses-link."
+                    }
+                );
             }
 
             var (accessToken, refreshToken) = _jwtService.GenerateTokens(user);
-            
-            return Ok(new { 
-                accessToken, 
-                refreshToken,
-                expiresIn = 30 
-            });
+
+            return Ok(
+                new
+                {
+                    accessToken,
+                    refreshToken,
+                    expiresIn = 30
+                }
+            );
         }
 
         // POST: api/Users/loginAD
@@ -236,34 +289,29 @@ namespace API.Controllers
             // Hent brugerens grupper fra AD
             var groups = _adService.GetGroups(login.Email);
 
-            
-
             var token = _jwtService.GenerateJwtTokenAD(login.Email, login.Email);
 
-
-            return Ok(new
-            {
-                token,
-                groups 
-            });
+            return Ok(new { token, groups });
         }
 
         [HttpPost("refresh-token")]
         public async Task<IActionResult> RefreshToken([FromBody] RefreshTokenRequest request)
         {
-            try 
+            try
             {
                 var handler = new JwtSecurityTokenHandler();
                 var jsonToken = handler.ReadToken(request.AccessToken) as JwtSecurityToken;
-                var userId = jsonToken?.Claims.First(claim => claim.Type == JwtRegisteredClaimNames.Sub).Value;
-                
+                var userId = jsonToken
+                    ?.Claims.First(claim => claim.Type == JwtRegisteredClaimNames.Sub)
+                    .Value;
+
                 if (userId == null)
                 {
                     return BadRequest(new { message = "Invalid token format" });
                 }
 
                 var user = await _context.Users.SingleOrDefaultAsync(u => u.Id == userId);
-                
+
                 if (user == null)
                 {
                     return NotFound(new { message = "User not found" });
@@ -276,11 +324,14 @@ namespace API.Controllers
 
                 var (accessToken, newRefreshToken) = _jwtService.GenerateTokens(user);
 
-                return Ok(new { 
-                    accessToken, 
-                    refreshToken = newRefreshToken,
-                    expiresIn = 30
-                });
+                return Ok(
+                    new
+                    {
+                        accessToken,
+                        refreshToken = newRefreshToken,
+                        expiresIn = 30
+                    }
+                );
             }
             catch (Exception)
             {

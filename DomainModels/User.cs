@@ -29,5 +29,8 @@ namespace DomainModels
 
         // Navigation property https://learn.microsoft.com/en-us/ef/core/modeling/relationships/navigations
         public ICollection<Booking> Bookings { get; set; }
+
+        public bool IsEmailConfirmed { get; set; }
+        public string? EmailConfirmationToken { get; set; }
     }
 }
