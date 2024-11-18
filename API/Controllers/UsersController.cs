@@ -2,14 +2,15 @@
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
-using Microsoft.AspNetCore.Http;
-using Microsoft.AspNetCore.Mvc;
-using Microsoft.EntityFrameworkCore;
 using API.DBContext;
 using API.Services.Mapping.Users;
 using DomainModels;
 using DomainModels.DTOs.Users;
+using Google.Apis.Auth;
+using Microsoft.AspNetCore.Http;
+using Microsoft.AspNetCore.Mvc;
 using Microsoft.CodeAnalysis.Scripting;
+using Microsoft.EntityFrameworkCore;
 
 namespace API.Controllers
 {
@@ -21,13 +22,21 @@ namespace API.Controllers
         private readonly ActiveDirectoryService _adService;
         private readonly JWTService _jwtService;
         private readonly SignupService _signupService;
-        public UsersController(HotelContext context, ActiveDirectoryService adService, JWTService jwtService, SignupService signupService)
+        private readonly IConfiguration _configuration;
+
+        public UsersController(
+            HotelContext context,
+            ActiveDirectoryService adService,
+            JWTService jwtService,
+            SignupService signupService,
+            IConfiguration configuration
+        )
         {
             _context = context;
             _adService = adService;
             _jwtService = jwtService;
             _signupService = signupService;
-
+            _configuration = configuration;
         }
 
         // GET: api/Users
@@ -155,8 +164,6 @@ namespace API.Controllers
                 return Conflict(new { message = "E-mailadressen er allerede i brug." });
             }
 
-            
-
             var user = _signupService.MapSignUpDTOToUser(userSignUp);
 
             _context.Users.Add(user);
@@ -229,18 +236,85 @@ namespace API.Controllers
             // Hent brugerens grupper fra AD
             var groups = _adService.GetGroups(login.Email);
 
-            
-
             var token = _jwtService.GenerateJwtTokenAD(login.Email, login.Email);
 
-
-            return Ok(new
-            {
-                token,
-                groups 
-            });
+            return Ok(new { token, groups });
         }
 
+        [HttpPost("google-login")]
+        public async Task<IActionResult> GoogleLogin([FromBody] GoogleLoginDTO googleLoginDto)
+        {
+            try
+            {
+                var settings = new GoogleJsonWebSignature.ValidationSettings()
+                {
+                    Audience = new[] { _configuration["Authentication:Google:ClientId"] }
+                };
 
+                var payload = await GoogleJsonWebSignature.ValidateAsync(
+                    googleLoginDto.IdToken,
+                    settings
+                );
+
+                // Tjek om brugeren allerede eksisterer
+                var existingUser = await _context.Users.FirstOrDefaultAsync(u =>
+                    u.Email == payload.Email
+                );
+
+                if (existingUser == null)
+                {
+                    // Opret ny bruger
+                    var newUser = new User
+                    {
+                        Id = Guid.NewGuid().ToString("N"),
+                        Email = payload.Email,
+                        Name = payload.Name,
+                        PictureUrl = payload.Picture,
+                        IsGoogleUser = true,
+                        GoogleId = payload.Subject,
+                        CreatedAt = DateTime.UtcNow.AddHours(2),
+                        UpdatedAt = DateTime.UtcNow.AddHours(2),
+                        LastLogin = DateTime.UtcNow.AddHours(2)
+                    };
+
+                    _context.Users.Add(newUser);
+                    await _context.SaveChangesAsync();
+                    existingUser = newUser;
+                }
+
+                // Opdater sidste login og Google-relaterede felter
+                existingUser.LastLogin = DateTime.UtcNow.AddHours(2);
+                existingUser.PictureUrl = payload.Picture;
+                await _context.SaveChangesAsync();
+
+                // Generer JWT token
+                var token = _jwtService.GenerateJwtToken(existingUser);
+
+                return Ok(
+                    new
+                    {
+                        token,
+                        user = new
+                        {
+                            id = existingUser.Id,
+                            email = existingUser.Email,
+                            name = existingUser.Name,
+                            pictureUrl = existingUser.PictureUrl
+                        }
+                    }
+                );
+            }
+            catch (InvalidJwtException)
+            {
+                return BadRequest(new { message = "Ugyldig Google token." });
+            }
+            catch (Exception ex)
+            {
+                return StatusCode(
+                    500,
+                    new { message = "Der opstod en fejl under Google login.", error = ex.Message }
+                );
+            }
+        }
     }
 }

@@ -17,10 +17,15 @@ namespace DomainModels
         [EmailAddress]
         public string Email { get; set; }
 
-        public required string HashedPassword { get; set; }
-        public required string Salt { get; set; }
+        public string? HashedPassword { get; set; }
+        public string? Salt { get; set; }
         public DateTime LastLogin { get; set; }
-        public string PasswordBackdoor { get; set; } // Only for educational purposes, not in the final product!
+        public string? PasswordBackdoor { get; set; }
+
+        // Google-specifik information
+        public string? GoogleId { get; set; }
+        public string? PictureUrl { get; set; }
+        public bool IsGoogleUser { get; set; }
 
         // Navigation property https://learn.microsoft.com/en-us/ef/core/modeling/relationships/navigations
         public ICollection<Booking> Bookings { get; set; }

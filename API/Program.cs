@@ -8,24 +8,27 @@ using Microsoft.IdentityModel.Tokens;
 var builder = WebApplication.CreateBuilder(args);
 
 // Add services to the container.
-
+    
 builder.Services.AddControllers();
 
-// Tilføj CORS-politik
+// Tilfï¿½j CORS-politik
 builder.Services.AddCors(options =>
 {
-    options.AddPolicy("AllowSpecificOrigin",
-        policy => policy.WithOrigins("https://localhost:7026", "http://localhost:5036")
-            .AllowAnyHeader()
-            .AllowAnyMethod());
+    options.AddPolicy(
+        "AllowSpecificOrigin",
+        policy =>
+            policy
+                .WithOrigins("https://localhost:7026", "http://localhost:5036")
+                .AllowAnyHeader()
+                .AllowAnyMethod()
+    );
 });
 
 IConfiguration Configuration = builder.Configuration;
 
 string connectionString = Configuration.GetConnectionString("DefaultConnection");
 
-builder.Services.AddDbContext<HotelContext>(options =>
-    options.UseNpgsql(connectionString));
+builder.Services.AddDbContext<HotelContext>(options => options.UseNpgsql(connectionString));
 
 // API.Services
 builder.Services.AddScoped<SignupService>();
@@ -33,33 +36,35 @@ builder.Services.AddScoped<JWTService>();
 
 // Bind ActiveDirectorySettings fra appsettings.json
 builder.Services.Configure<ActiveDirectorySettings>(
-    builder.Configuration.GetSection("ActiveDirectory"));
+    builder.Configuration.GetSection("ActiveDirectory")
+);
 
 // Registrer ActiveDirectoryService som en singleton eller scoped tjeneste
 builder.Services.AddScoped<ActiveDirectoryService>();
 
 // Configure JWT Authentication
-builder.Services.AddAuthentication(x =>
-{
-    x.DefaultAuthenticateScheme = JwtBearerDefaults.AuthenticationScheme;
-    x.DefaultChallengeScheme = JwtBearerDefaults.AuthenticationScheme;
-    x.DefaultScheme = JwtBearerDefaults.AuthenticationScheme;
-}).AddJwtBearer(x =>
-{
-    x.TokenValidationParameters = new TokenValidationParameters
+builder
+    .Services.AddAuthentication(x =>
     {
-        ValidIssuer = Configuration["JwtSettings:Issuer"],
-        ValidAudience = Configuration["JwtSettings:Audience"],
-        IssuerSigningKey = new SymmetricSecurityKey
-        (
-            Encoding.UTF8.GetBytes(Configuration["JwtSettings:Key"])
-        ),
-        ValidateIssuer = true,
-        ValidateAudience = true,
-        ValidateLifetime = true,
-        ValidateIssuerSigningKey = true
-    };
-});
+        x.DefaultAuthenticateScheme = JwtBearerDefaults.AuthenticationScheme;
+        x.DefaultChallengeScheme = JwtBearerDefaults.AuthenticationScheme;
+        x.DefaultScheme = JwtBearerDefaults.AuthenticationScheme;
+    })
+    .AddJwtBearer(x =>
+    {
+        x.TokenValidationParameters = new TokenValidationParameters
+        {
+            ValidIssuer = Configuration["JwtSettings:Issuer"],
+            ValidAudience = Configuration["JwtSettings:Audience"],
+            IssuerSigningKey = new SymmetricSecurityKey(
+                Encoding.UTF8.GetBytes(Configuration["JwtSettings:Key"])
+            ),
+            ValidateIssuer = true,
+            ValidateAudience = true,
+            ValidateLifetime = true,
+            ValidateIssuerSigningKey = true
+        };
+    });
 
 builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen();
