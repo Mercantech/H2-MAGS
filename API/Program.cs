@@ -8,7 +8,6 @@ using Microsoft.OpenApi.Models;
 
 var builder = WebApplication.CreateBuilder(args);
 
-
 // Add services to the container.
 
 builder.Services.AddControllers();
@@ -24,7 +23,8 @@ builder.Services.AddCors(options =>
                     "https://localhost:7026",
                     "http://localhost:5036",
                     "https://hotel.mercantec.tech",
-                    "https://localhost:51806/"
+                    "https://localhost:51806/",
+                    "https://magshotel.onrender.com"
                 )
                 .AllowAnyHeader()
                 .AllowAnyMethod()
