@@ -1,7 +1,7 @@
 using Blazored.LocalStorage;
+using BlazorWASM.Services;
 using Microsoft.AspNetCore.Components.Web;
 using Microsoft.AspNetCore.Components.WebAssembly.Hosting;
-using BlazorWASM.Services;
 
 namespace BlazorWASM;
 
@@ -20,9 +20,12 @@ public class Program
         builder.Services.AddScoped<IAuthService, AuthService>();
 
         // Konfigurer HttpClient med base URL
-        builder.Services.AddScoped(sp => new HttpClient 
-        { 
-            BaseAddress = new Uri("https://localhost:7207/") 
+        builder.Services.AddScoped(sp => new HttpClient
+        {
+            BaseAddress = new Uri(
+                Environment.GetEnvironmentVariable("API_BASE_URL")
+                    ?? "https://h2-mags.onrender.com/"
+            )
         });
 
         await builder.Build().RunAsync();

@@ -24,13 +24,15 @@ namespace API.Controllers
         private readonly JWTService _jwtService;
         private readonly SignupService _signupService;
         private readonly EmailService _emailService;
+        private readonly IConfiguration _configuration;
 
         public UsersController(
             HotelContext context,
             ActiveDirectoryService adService,
             JWTService jwtService,
             SignupService signupService,
-            EmailService emailService
+            EmailService emailService,
+            IConfiguration configuration
         )
         {
             _context = context;
@@ -38,6 +40,7 @@ namespace API.Controllers
             _jwtService = jwtService;
             _signupService = signupService;
             _emailService = emailService;
+            _configuration = configuration;
         }
 
         // GET: api/Users
@@ -208,16 +211,20 @@ namespace API.Controllers
                 u.Email == email && u.EmailConfirmationToken == token
             );
 
+            var baseUrl =
+                Environment.GetEnvironmentVariable("APPLICATION_BASE_URL")
+                ?? _configuration["Application:BaseUrl"];
+
             if (user == null)
             {
-                return BadRequest(new { message = "Ugyldigt token eller email" });
+                return Redirect($"https://{baseUrl}/email-confirmation?status=error");
             }
 
             user.IsEmailConfirmed = true;
             user.EmailConfirmationToken = null;
             await _context.SaveChangesAsync();
 
-            return Ok(new { message = "Email er blevet bekræftet. Du kan nu logge ind." });
+            return Redirect($"https://{baseUrl}/email-confirmation?status=success");
         }
 
         // DELETE: api/Users/5

@@ -1,0 +1,53 @@
+@page "/email-confirmation"
+@inject NavigationManager NavigationManager
+
+<div class="container">
+    <div class="row justify-content-center mt-5">
+        <div class="col-md-6">
+            <div class="card text-center">
+                <div class="card-body">
+                    @if (IsSuccess)
+                    {
+                        <div class="mb-4">
+                            <i class="fas fa-check-circle text-success" style="font-size: 4rem;"></i>
+                        </div>
+                        <h2 class="card-title mb-4">Email Bekræftet!</h2>
+                        <p class="card-text">
+                            Din email er nu bekræftet, og du har fuld adgang til din MAGS Hotel-konto.
+                        </p>
+                        <div class="mt-4">
+                            <a href="/login" class="btn btn-primary">Log ind nu</a>
+                        </div>
+                    }
+                    else
+                    {
+                        <div class="mb-4">
+                            <i class="fas fa-times-circle text-danger" style="font-size: 4rem;"></i>
+                        </div>
+                        <h2 class="card-title mb-4">Bekræftelse Fejlede</h2>
+                        <p class="card-text">
+                            Der opstod desværre en fejl ved bekræftelsen af din email.
+                            Dette kan skyldes at linket er udløbet eller allerede er blevet brugt.
+                        </p>
+                        <div class="mt-4">
+                            <a href="/support" class="btn btn-outline-primary">Kontakt Support</a>
+                        </div>
+                    }
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+@code {
+    private bool IsSuccess => NavigationManager.Uri.Contains("status=success");
+
+    protected override void OnInitialized()
+    {
+        // Hvis der ikke er nogen status parameter, redirect til forsiden
+        if (!NavigationManager.Uri.Contains("status="))
+        {
+            NavigationManager.NavigateTo("/");
+        }
+    }
+} 
