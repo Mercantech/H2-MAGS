@@ -24,7 +24,7 @@ namespace API.Controllers
         [HttpGet("login")]
         public IActionResult GoogleLogin()
         {
-            var properties = new AuthenticationProperties { RedirectUri = "https://localhost:7207/api/GoogleAuth/response" };
+            var properties = new AuthenticationProperties { RedirectUri = "https://hotel.mercantec.tech/api/GoogleAuth/response" };
             return Challenge(properties, GoogleDefaults.AuthenticationScheme);
         }
 

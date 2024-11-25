@@ -1,6 +1,7 @@
 @page "/google-login"
 @inject IGoogleAuthService GoogleAuthService
 @inject IJSRuntime JSRuntime
+@inject HttpClient HttpClient
 
 <h3>Google Login</h3>
 
@@ -15,7 +16,8 @@
     {
         if (firstRender)
         {
-            await JSRuntime.InvokeVoidAsync("import", "https://accounts.google.com/gsi/client");
+            var script = await HttpClient.GetStringAsync("api/google-login");
+            await JSRuntime.InvokeVoidAsync("eval", script);
         }
     }
 
