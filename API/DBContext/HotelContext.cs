@@ -23,43 +23,31 @@ namespace API.DBContext
 
         protected override void OnModelCreating(ModelBuilder modelBuilder)
         {
-            // Konfiguration af relationer og constraints
+            modelBuilder.Entity<BookingUser>()
+                .HasKey(bu => new { bu.BookingId, bu.UserId });
 
-            // En bruger kan have mange bookinger
-            modelBuilder.Entity<User>()
-                .HasMany(u => u.Bookings)
-                .WithOne(b => b.User)
-                .HasForeignKey(b => b.UserId)
-                .OnDelete(DeleteBehavior.Cascade);
+            modelBuilder.Entity<BookingUser>()
+                .HasOne(bu => bu.Booking)
+                .WithMany(b => b.BookingUsers)
+                .HasForeignKey(bu => bu.BookingId);
 
-            // Et værelse kan have mange bookinger
-            modelBuilder.Entity<Room>()
-                .HasMany(r => r.Bookings)
-                .WithOne(b => b.Room)
-                .HasForeignKey(b => b.RoomId)
-                .OnDelete(DeleteBehavior.Cascade);
+            modelBuilder.Entity<BookingUser>()
+                .HasOne(bu => bu.User)
+            .WithMany(u => u.BookingUsers)
+            .HasForeignKey(bu => bu.UserId);
 
-            // RoomType relation
-            modelBuilder.Entity<RoomType>()
-                .HasMany(rt => rt.Rooms)
-                .WithOne(r => r.RoomType)
-                .HasForeignKey(r => r.RoomTypeId)
-                .OnDelete(DeleteBehavior.Restrict);
+            modelBuilder.Entity<BookingRoom>()
+                .HasKey(br => new { br.BookingId, br.RoomId });
 
-            // Indeksering https://www.geeksforgeeks.org/sql-indexes/
-            modelBuilder.Entity<User>()
-                .HasIndex(u => u.Email)
-                .IsUnique();
+            modelBuilder.Entity<BookingRoom>()
+            .HasOne(br => br.Booking)
+            .WithMany(b => b.BookingRooms)
+            .HasForeignKey(br => br.BookingId);
 
-            modelBuilder.Entity<Room>()
-                .HasIndex(r => r.RoomNumber)
-                .IsUnique();
-
-            modelBuilder.Entity<Booking>()
-                .HasIndex(b => b.UserId);
-
-            modelBuilder.Entity<Booking>()
-                .HasIndex(b => b.RoomId);
+            modelBuilder.Entity<BookingRoom>()
+            .HasOne(br => br.Room)
+            .WithMany(r => r.BookingRooms)  
+            .HasForeignKey(br => br.RoomId);
 
             base.OnModelCreating(modelBuilder);
         }

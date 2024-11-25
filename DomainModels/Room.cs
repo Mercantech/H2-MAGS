@@ -22,5 +22,6 @@ namespace DomainModels
         // Navigation properties https://learn.microsoft.com/en-us/ef/core/modeling/relationships/navigations
         public RoomType RoomType { get; set; }
         public ICollection<Booking> Bookings { get; set; }
+        public ICollection<BookingRoom> BookingRooms { get; set; }
     }
 }

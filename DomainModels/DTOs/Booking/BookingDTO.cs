@@ -11,28 +11,32 @@ namespace DomainModels.DTOs.Booking
         public class GetBookingDTO
         {
             public string Id { get; set; }
-            public string UserId { get; set; }
-            public string RoomId { get; set; }
+
+            public List<string> UserIds { get; set; }
+
+            public List<string> RoomIds { get; set; }
+
             public DateTime CheckIn { get; set; }
+
             public DateTime CheckOut { get; set; }
-            public RoomDetailsDTO RoomDetails { get; set; }  // Bruger den eksisterende RoomDetailsDTO
+            public string Status { get; set; }
+            public RoomDetailsDTO RoomDetails { get; set; }
             public int TotalNights { get; set; }
             public decimal TotalPrice { get; set; }
-            public string Status { get; set; }
         }
 
         public class CreateBookingDTO
         {
             [Required]
-            public string UserId { get; set; }
+            public List<string> UserIds { get; set; }
 
-            [Required]
-            public string RoomId { get; set; }
+            [Required] 
+            public List<string> RoomIds { get; set; }
 
             [Required]
             public DateTime CheckIn { get; set; }
 
-            [Required]
+            [Required]  
             public DateTime CheckOut { get; set; }
         }
 
@@ -42,11 +46,10 @@ namespace DomainModels.DTOs.Booking
             public string Id { get; set; }
 
             [Required]
-            public string UserId { get; set; }
+            public List<string> UserIds { get; set; }
 
             [Required]
-            public string RoomId { get; set; }
-
+public List<string> RoomIds { get; set; }
             [Required]
             public DateTime CheckIn { get; set; }
 

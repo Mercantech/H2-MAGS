@@ -204,7 +204,6 @@
                         var bookings = await bookingsResponse.Content.ReadFromJsonAsync<List<GetBookingDTO>>();
                         rooms = rooms.Where(room => 
                             !bookings.Any(b => 
-                                b.RoomId == room.Id && 
                                 b.CheckIn < checkOut && 
                                 b.CheckOut > checkIn)).ToList();
                     }
@@ -234,8 +233,8 @@
         {
             var booking = new CreateBookingDTO
             {
-                UserId = userId,
-                RoomId = roomId,
+                //UserId = userId,
+                //RoomId = roomId,
                 // Konverter til UTC før afsendelse
                 CheckIn = checkIn.Value.ToUniversalTime(),
                 CheckOut = checkOut.Value.ToUniversalTime()
