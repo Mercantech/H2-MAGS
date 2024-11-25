@@ -16,16 +16,10 @@ builder.Services.AddControllers();
 builder.Services.AddCors(options =>
 {
     options.AddPolicy(
-        "AllowSpecificOrigin",
+        "AllowAll",
         policy =>
             policy
-                .WithOrigins(
-                    "https://localhost:7026",
-                    "http://localhost:5036",
-                    "https://hotel.mercantec.tech",
-                    "https://localhost:51806/",
-                    "https://magshotel.onrender.com"
-                )
+                .AllowAnyOrigin()
                 .AllowAnyHeader()
                 .AllowAnyMethod()
     );
@@ -35,7 +29,7 @@ IConfiguration Configuration = builder.Configuration;
 
 string connectionString =
     Environment.GetEnvironmentVariable("DATABASE_URL")
-    ?? Configuration.GetConnectionString("DefaultConnection");
+    ?? Configuration.GetConnectionString("NeonConnection");
 
 builder.Services.AddDbContext<HotelContext>(options => options.UseNpgsql(connectionString));
 
@@ -54,35 +48,44 @@ builder.Services.AddScoped<ActiveDirectoryService>();
 // Tilføj EmailService
 builder.Services.AddScoped<EmailService>();
 
+// Log Google Authentication configuration
+var googleClientId = builder.Configuration["Authentication:Google:ClientId"];
+var googleClientSecret = builder.Configuration["Authentication:Google:ClientSecret"];
+
+if (string.IsNullOrEmpty(googleClientId) || string.IsNullOrEmpty(googleClientSecret))
+{
+    Console.WriteLine("Google Authentication is not configured correctly.");
+    Console.WriteLine("Please check the 'Authentication:Google:ClientId' and 'Authentication:Google:ClientSecret' values in appsettings.json.");
+}
+else
+{
+    Console.WriteLine("Google Authentication is configured:");
+    Console.WriteLine($"ClientId: {googleClientId}");
+    Console.WriteLine($"ClientSecret: {new string('*', googleClientSecret.Length)}"); 
+}
+
 // Configure JWT Authentication
 builder
-    .Services.AddAuthentication(x =>
+    .Services.AddAuthentication(options =>
     {
-        x.DefaultAuthenticateScheme = JwtBearerDefaults.AuthenticationScheme;
-        x.DefaultChallengeScheme = JwtBearerDefaults.AuthenticationScheme;
-        x.DefaultScheme = JwtBearerDefaults.AuthenticationScheme;
+        options.DefaultAuthenticateScheme = JwtBearerDefaults.AuthenticationScheme;
+        options.DefaultChallengeScheme = JwtBearerDefaults.AuthenticationScheme;
     })
-    .AddJwtBearer(x =>
+    .AddJwtBearer(options =>
     {
-        x.TokenValidationParameters = new TokenValidationParameters
+        options.TokenValidationParameters = new TokenValidationParameters
         {
-            ValidIssuer =
-                Environment.GetEnvironmentVariable("JWT_ISSUER")
-                ?? Configuration["JwtSettings:Issuer"],
-            ValidAudience =
-                Environment.GetEnvironmentVariable("JWT_AUDIENCE")
-                ?? Configuration["JwtSettings:Audience"],
-            IssuerSigningKey = new SymmetricSecurityKey(
-                Encoding.UTF8.GetBytes(
-                    Environment.GetEnvironmentVariable("JWT_KEY")
-                        ?? Configuration["JwtSettings:Key"]
-                )
-            ),
             ValidateIssuer = true,
+            ValidIssuer = "accounts.google.com",
             ValidateAudience = true,
-            ValidateLifetime = true,
-            ValidateIssuerSigningKey = true
+            ValidAudience = Configuration["Authentication:Google:ClientId"],
+            ValidateLifetime = true
         };
+    })
+    .AddGoogle(options =>
+    {
+        options.ClientId = Configuration["Authentication:Google:ClientId"];
+        options.ClientSecret = Configuration["Authentication:Google:ClientSecret"];
     });
 
 builder.Services.AddEndpointsApiExplorer();
@@ -131,7 +134,7 @@ app.UseSwaggerUI();
 app.UseHttpsRedirection();
 
 // Anvend CORS-politikken
-app.UseCors("AllowSpecificOrigin");
+app.UseCors("AllowAll");
 
 app.UseAuthentication();
 

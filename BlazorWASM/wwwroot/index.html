@@ -32,6 +32,30 @@
     </div>
     <script src="_framework/blazor.webassembly.js"></script>
     <script>navigator.serviceWorker.register('service-worker.js');</script>
+    <script src="https://apis.google.com/js/platform.js" async defer></script>
+    <script>
+        window.initGoogleSignIn = function(clientId) {
+            gapi.load('auth2', function() {
+                gapi.auth2.init({
+                    client_id: clientId,
+                }).then(function() {
+                    gapi.signin2.render('google-signin', {
+                        'scope': 'profile email',
+                        'width': 240,
+                        'height': 50,
+                        'longtitle': true,
+                        'theme': 'dark',
+                        'onsuccess': onGoogleSignIn,
+                    });
+                });
+            });
+        };
+
+        window.onGoogleSignIn = function(user) {
+            var idToken = user.getAuthResponse().id_token;
+            DotNet.invokeMethodAsync('BlazorWASM', 'HandleGoogleSignIn', idToken);
+        };
+    </script>
 </body>
 
 </html>

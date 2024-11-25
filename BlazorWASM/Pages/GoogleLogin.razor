@@ -1,0 +1,25 @@
+@page "/google-login"
+@inject IGoogleAuthService GoogleAuthService
+@inject IJSRuntime JSRuntime
+
+<h3>Google Login</h3>
+
+@code {
+    protected override async Task OnAfterRenderAsync(bool firstRender)
+    {
+        if (firstRender)
+        {
+            await JSRuntime.InvokeVoidAsync("initGoogleSignIn", "651368027146-uo6aq2thrbapivjqe93ari72t65m828m.apps.googleusercontent.com");
+        }
+    }
+
+    [JSInvokable]
+    public async Task HandleGoogleSignIn(string idToken)
+    {
+        var success = await GoogleAuthService.LoginAsync(idToken);
+        if (!success)
+        {
+            // Håndter login fejl
+        }
+    }
+} 

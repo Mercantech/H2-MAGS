@@ -150,5 +150,35 @@ namespace API.Services.Mapping.Users
                 return false;
             }
         }
+
+        public string GenerateJwtTokenGoogle(string userId, string userName)
+        {
+            var claims = new[]
+            {
+                new Claim(JwtRegisteredClaimNames.Sub, userId),
+                new Claim(JwtRegisteredClaimNames.Jti, Guid.NewGuid().ToString()),
+                new Claim(ClaimTypes.Name, userName)
+            };
+
+            var key = new SymmetricSecurityKey(
+                Encoding.UTF8.GetBytes(
+                    Environment.GetEnvironmentVariable("JWT_KEY")
+                        ?? _configuration["JwtSettings:Key"]
+                )
+            );
+            var creds = new SigningCredentials(key, SecurityAlgorithms.HmacSha256);
+
+            var token = new JwtSecurityToken(
+                Environment.GetEnvironmentVariable("JWT_ISSUER")
+                    ?? _configuration["JwtSettings:Issuer"],
+                Environment.GetEnvironmentVariable("JWT_AUDIENCE")
+                    ?? _configuration["JwtSettings:Audience"],
+                claims,
+                expires: DateTime.Now.AddMinutes(30),
+                signingCredentials: creds
+            );
+
+            return new JwtSecurityTokenHandler().WriteToken(token);
+        }
     }
 }

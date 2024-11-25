@@ -30,7 +30,7 @@ namespace BlazorWASM.Services
             {
                 var loginRequest = new
                 {
-                    Email = email,  // Ændret fra Username til Email
+                    Email = email,  
                     Password = password
                 };
 

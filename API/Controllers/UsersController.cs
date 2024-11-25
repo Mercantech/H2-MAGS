@@ -281,26 +281,6 @@ namespace API.Controllers
             );
         }
 
-        // POST: api/Users/loginAD
-        [HttpPost("loginAD")]
-        public async Task<IActionResult> LoginOnAD([FromBody] Login login)
-        {
-            // Forsøg at validere brugeren mod AD
-            bool isValidUser = _adService.ValidateUser(login.Email, login.Password);
-
-            if (!isValidUser)
-            {
-                return Unauthorized(new { message = "Invalid email or password." });
-            }
-
-            // Hent brugerens grupper fra AD
-            var groups = _adService.GetGroups(login.Email);
-
-            var token = _jwtService.GenerateJwtTokenAD(login.Email, login.Email);
-
-            return Ok(new { token, groups });
-        }
-
         [HttpPost("refresh-token")]
         public async Task<IActionResult> RefreshToken([FromBody] RefreshTokenRequest request)
         {

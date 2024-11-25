@@ -85,6 +85,9 @@
 
     private string? NavMenuCssClass => collapseNavMenu ? "collapse" : null;
 
+    [Parameter]
+    public EventCallback OnAuthenticationChanged { get; set; }
+
     protected override async Task OnInitializedAsync()
     {
         isAuthenticated = await AuthService.IsAuthenticatedAsync();
@@ -98,6 +101,7 @@
     private async Task HandleLogout()
     {
         await AuthService.LogoutAsync();
+        await OnAuthenticationChanged.InvokeAsync();
         NavigationManager.NavigateTo("/", true);
     }
 }

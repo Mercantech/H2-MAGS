@@ -38,9 +38,14 @@
     </div>
 </div>
 
+<div id="google-signin"></div>
+
 @code {
     private LoginModel loginModel = new();
     private string errorMessage;
+
+    [CascadingParameter]
+    public EventCallback OnAuthenticationChanged { get; set; }
 
     private async Task HandleLogin()
     {
@@ -49,6 +54,7 @@
             var result = await AuthService.LoginAsync(loginModel.Email, loginModel.Password);
             if (result)
             {
+                await OnAuthenticationChanged.InvokeAsync();
                 NavigationManager.NavigateTo("/");
             }
             else
@@ -58,7 +64,7 @@
         }
         catch (Exception ex)
         {
-            errorMessage = "Der skete en fejl under login";
+            errorMessage = $"{ex.Message}";
             Console.WriteLine($"Login error: {ex.Message}");
         }
     }

@@ -18,13 +18,14 @@ public class Program
 
         // Tilføj dine andre services
         builder.Services.AddScoped<IAuthService, AuthService>();
+        builder.Services.AddScoped<IGoogleAuthService, GoogleAuthService>();
 
         // Konfigurer HttpClient med base URL
         builder.Services.AddScoped(sp => new HttpClient
         {
             BaseAddress = new Uri(
                 Environment.GetEnvironmentVariable("API_BASE_URL")
-                    ?? "https://h2-mags.onrender.com/"
+                    ?? "https://localhost:7207/"
             )
         });
 

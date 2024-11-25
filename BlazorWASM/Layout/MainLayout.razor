@@ -1,7 +1,7 @@
 ﻿@inherits LayoutComponentBase
 <div class="page">
     <div class="sidebar">
-        <NavMenu />
+        <NavMenu OnAuthenticationChanged="HandleAuthenticationChanged" />
     </div>
 
     <main>
@@ -14,3 +14,10 @@
         </article>
     </main>
 </div>
+
+@code {
+    private async Task HandleAuthenticationChanged()
+    {
+        await InvokeAsync(StateHasChanged);
+    }
+}
