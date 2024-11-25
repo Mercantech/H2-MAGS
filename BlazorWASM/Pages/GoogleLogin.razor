@@ -16,7 +16,7 @@
     {
         if (firstRender)
         {
-            var script = await HttpClient.GetStringAsync("api/google-login");
+            var script = await HttpClient.GetStringAsync("api/GoogleAuth/login");
             await JSRuntime.InvokeVoidAsync("eval", script);
         }
     }
