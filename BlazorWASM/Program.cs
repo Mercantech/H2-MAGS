@@ -25,7 +25,7 @@ public class Program
         {
             BaseAddress = new Uri(
                 Environment.GetEnvironmentVariable("API_BASE_URL")
-                    ?? "https://localhost:7207/"
+                    ?? "https://hotel.mercantec.tech/"
             )
         });
 

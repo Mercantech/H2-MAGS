@@ -4,22 +4,28 @@
 
 <h3>Google Login</h3>
 
+<div id="g_id_onload"
+     data-client_id="651368027146-uo6aq2thrbapivjqe93ari72t65m828m.apps.googleusercontent.com"
+     data-callback="handleCredentialResponse">
+</div>
+<div class="g_id_signin" data-type="standard"></div>
+
 @code {
     protected override async Task OnAfterRenderAsync(bool firstRender)
     {
         if (firstRender)
         {
-            await JSRuntime.InvokeVoidAsync("initGoogleSignIn", "651368027146-uo6aq2thrbapivjqe93ari72t65m828m.apps.googleusercontent.com");
+            await JSRuntime.InvokeVoidAsync("import", "https://accounts.google.com/gsi/client");
         }
     }
 
     [JSInvokable]
-    public async Task HandleGoogleSignIn(string idToken)
+    public async Task HandleCredentialResponse(string credential)
     {
-        var success = await GoogleAuthService.LoginAsync(idToken);
+        var success = await GoogleAuthService.LoginAsync(credential);
         if (!success)
         {
-            // Håndter login fejl
+            // Håndter login fejl  
         }
     }
 } 
