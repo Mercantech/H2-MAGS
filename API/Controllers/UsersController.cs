@@ -226,6 +226,24 @@ namespace API.Controllers
 
             return Redirect($"https://{baseUrl}/email-confirmation?status=success");
         }
+        [HttpGet("guests")]
+public async Task<ActionResult<IEnumerable<GuestDTO>>> GetGuests()
+{
+    var guests = await _context.Users
+        .Where(u => !u.IsGoogleUser) // Antager at normale brugere er gæster
+        .Select(u => new GuestDTO
+        {
+            Id = u.Id,
+            Name = u.Name,
+            Email = u.Email,
+            LastLogin = u.LastLogin,
+            TotalBookings = u.Bookings.Count,
+            IsEmailConfirmed = u.IsEmailConfirmed
+        })
+        .ToListAsync();
+
+    return Ok(guests);
+}
 
         // DELETE: api/Users/5
         [HttpDelete("{id}")]

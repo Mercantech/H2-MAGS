@@ -1,0 +1,5 @@
+{
+  "devDependencies": {
+    "shadcn-svelte": "^0.14.0"
+  }
+}
