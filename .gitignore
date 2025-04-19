@@ -4,3 +4,5 @@ bin/
 obj/
 .vs/
 
+/Svelte/Hotel/node_modules
+/Svelte/node_modules
