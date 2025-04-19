@@ -27,9 +27,21 @@ builder.Services.AddCors(options =>
 
 IConfiguration Configuration = builder.Configuration;
 
-string connectionString =
-    Environment.GetEnvironmentVariable("DATABASE_URL")
-    ?? Configuration.GetConnectionString("NeonConnection");
+string connectionString;
+try
+{
+    Console.WriteLine("Prøver at åbne DefaultConnection til Mercantecs Datacenter...");
+    var defaultConnection = Configuration.GetConnectionString("DefaultConnection");
+    using var connection = new Npgsql.NpgsqlConnection(defaultConnection);
+    connection.Open(); 
+    connectionString = defaultConnection; 
+    connection.Close();
+}
+catch
+{
+    Console.WriteLine("Fejl ved at åbne DefaultConnection. Prøver NeonConnection...");
+    connectionString = Configuration.GetConnectionString("NeonConnection");
+}
 
 builder.Services.AddDbContext<HotelContext>(options => options.UseNpgsql(connectionString));
 

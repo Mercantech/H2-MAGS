@@ -32,5 +32,6 @@ namespace DomainModels
 
         public bool IsEmailConfirmed { get; set; }
         public string? EmailConfirmationToken { get; set; }
+        public ICollection<BookingUser> BookingUsers { get; set; }
     }
 }

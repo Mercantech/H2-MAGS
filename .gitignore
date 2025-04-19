@@ -8,3 +8,6 @@ obj/
 node_modules/
 
 .vscode/
+/Svelte/Hotel/node_modules
+/Svelte/node_modules
+x
