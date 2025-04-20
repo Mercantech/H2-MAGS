@@ -11,6 +11,9 @@ using DomainModels.DTOs.RoomType;
 using Microsoft.AspNetCore.Authorization;
 namespace API.Controllers
 {
+    /// <summary>
+    /// API-controller til håndtering af værelsestyper.
+    /// </summary>
     [Route("api/[controller]")]
     [ApiController]
     public class RoomTypesController : ControllerBase
@@ -22,7 +25,10 @@ namespace API.Controllers
             _context = context;
         }
 
-        // GET: api/RoomTypes
+        /// <summary>
+        /// Henter alle værelsestyper.
+        /// </summary>
+        /// <returns>En liste af værelsestyper.</returns>
         [HttpGet]
         public async Task<ActionResult<IEnumerable<GetRoomTypeDTO>>> GetRoomTypes()
         {
@@ -37,7 +43,12 @@ namespace API.Controllers
                 .ToListAsync();
         }
 
-        // GET: api/RoomTypes/5
+        /// <summary>
+        /// Henter en specifik værelsestype ud fra ID.
+        /// </summary>
+        /// <param name="id">Værelsestypens unikke ID.</param>
+        /// <returns>Værelsestypens detaljer.</returns>
+        /// <response code="404">Værelsestype ikke fundet.</response>
         [HttpGet("{id}")]
         public async Task<ActionResult<GetRoomTypeDTO>> GetRoomType(string id)
         {
@@ -59,11 +70,17 @@ namespace API.Controllers
             return roomType;
         }
 
-        // PUT: api/RoomTypes/5
+        /// <summary>
+        /// Opdaterer en eksisterende værelsestype.
+        /// </summary>
+        /// <param name="id">Værelsestypens unikke ID.</param>
+        /// <param name="createRoomTypeDto">Objekt med opdaterede værelsestypedata.</param>
+        /// <returns>NoContent ved succes, ellers fejlbesked.</returns>
+        /// <response code="404">Værelsestype ikke fundet.</response>
         [HttpPut("{id}")]
         public async Task<IActionResult> PutRoomType(string id, CreateRoomTypeDTO createRoomTypeDto)
         {
-            
+
 
             var roomType = await _context.RoomTypes.FindAsync(id);
             if (roomType == null)
@@ -96,7 +113,11 @@ namespace API.Controllers
             return NoContent();
         }
 
-        // POST: api/RoomTypes
+        /// <summary>
+        /// Opretter en ny værelsestype.
+        /// </summary>
+        /// <param name="createRoomTypeDto">Objekt med værelsestypedata.</param>
+        /// <returns>Den oprettede værelsestype.</returns>
         [HttpPost]
         public async Task<ActionResult<CreateRoomTypeDTO>> PostRoomType(CreateRoomTypeDTO createRoomTypeDto)
         {
@@ -116,7 +137,12 @@ namespace API.Controllers
             return CreatedAtAction(nameof(GetRoomType), new { id = roomType.Id }, createRoomTypeDto);
         }
 
-        // DELETE: api/RoomTypes/5
+        /// <summary>
+        /// Sletter en værelsestype ud fra ID.
+        /// </summary>
+        /// <param name="id">Værelsestypens unikke ID.</param>
+        /// <returns>NoContent ved succes, ellers fejlbesked.</returns>
+        /// <response code="404">Værelsestype ikke fundet.</response>
         [HttpDelete("{id}")]
         public async Task<IActionResult> DeleteRoomType(string id)
         {

@@ -15,6 +15,9 @@ using JwtRegisteredClaimNames = Microsoft.IdentityModel.JsonWebTokens.JwtRegiste
 
 namespace API.Controllers
 {
+    /// <summary>
+    /// API-controller til håndtering af brugere.
+    /// </summary>
     [Route("api/[controller]")]
     [ApiController]
     public class UsersController : ControllerBase
@@ -43,14 +46,22 @@ namespace API.Controllers
             _configuration = configuration;
         }
 
-        // GET: api/Users
+        /// <summary>
+        /// Henter alle brugere.
+        /// </summary>
+        /// <returns>En liste af brugere.</returns>
         [HttpGet]
         public async Task<ActionResult<IEnumerable<User>>> GetUsers()
         {
             return await _context.Users.ToListAsync();
         }
 
-        // GET: api/Users/5
+        /// <summary>
+        /// Henter en specifik bruger ud fra ID.
+        /// </summary>
+        /// <param name="id">Brugerens unikke ID.</param>
+        /// <returns>Brugerens detaljer.</returns>
+        /// <response code="404">Bruger ikke fundet.</response>
         [HttpGet("{id}")]
         public async Task<ActionResult<User>> GetUser(string id)
         {
@@ -64,8 +75,14 @@ namespace API.Controllers
             return user;
         }
 
-        // PUT: api/Users/5
-        // To protect from overposting attacks, see https://go.microsoft.com/fwlink/?linkid=2123754
+        /// <summary>
+        /// Opdaterer en eksisterende bruger.
+        /// </summary>
+        /// <param name="id">Brugerens unikke ID.</param>
+        /// <param name="updateUserDto">Objekt med opdaterede brugerdata.</param>
+        /// <returns>NoContent ved succes, ellers fejlbesked.</returns>
+        /// <response code="400">ID matcher ikke eller ugyldig e-mail.</response>
+        /// <response code="404">Bruger ikke fundet.</response>
         [HttpPut("{id}")]
         public async Task<IActionResult> PutUser(string id, UpdateUserDTO updateUserDto)
         {
@@ -110,7 +127,14 @@ namespace API.Controllers
             return NoContent();
         }
 
-        // PUT: api/Users/5/ResetPassword
+        /// <summary>
+        /// Nulstiller adgangskoden for en bruger.
+        /// </summary>
+        /// <param name="id">Brugerens unikke ID.</param>
+        /// <param name="resetPasswordDto">Objekt med ny adgangskode.</param>
+        /// <returns>NoContent ved succes, ellers fejlbesked.</returns>
+        /// <response code="400">Adgangskoden er ikke sikker nok.</response>
+        /// <response code="404">Bruger ikke fundet.</response>
         [HttpPut("{id}/ResetPassword")]
         public async Task<IActionResult> ResetPassword(string id, ResetPasswordDTO resetPasswordDto)
         {
@@ -150,6 +174,13 @@ namespace API.Controllers
             return NoContent();
         }
 
+        /// <summary>
+        /// Opretter en ny bruger (registrering).
+        /// </summary>
+        /// <param name="userSignUp">Objekt med brugerdata til oprettelse.</param>
+        /// <returns>Resultat af oprettelsen.</returns>
+        /// <response code="400">Ugyldig e-mailadresse.</response>
+        /// <response code="409">E-mailadressen er allerede i brug eller adgangskoden er ikke sikker nok.</response>
         [HttpPost("register")]
         public async Task<IActionResult> PostUser(SignUp userSignUp)
         {
@@ -200,7 +231,12 @@ namespace API.Controllers
             }
         }
 
-        // Tilføj nyt endpoint til email bekræftelse
+        /// <summary>
+        /// Bekræfter en brugers e-mail via token.
+        /// </summary>
+        /// <param name="token">Bekræftelsestoken sendt til brugerens e-mail.</param>
+        /// <param name="email">Brugerens e-mailadresse.</param>
+        /// <returns>Redirect til bekræftelsesside.</returns>
         [HttpGet("confirm-email")]
         public async Task<IActionResult> ConfirmEmail(
             [FromQuery] string token,
@@ -226,26 +262,36 @@ namespace API.Controllers
 
             return Redirect($"https://{baseUrl}/email-confirmation?status=success");
         }
+
+        /// <summary>
+        /// Henter alle gæster (brugere, der ikke er Google-brugere).
+        /// </summary>
+        /// <returns>En liste af gæster.</returns>
         [HttpGet("guests")]
-public async Task<ActionResult<IEnumerable<GuestDTO>>> GetGuests()
-{
-    var guests = await _context.Users
-        .Where(u => !u.IsGoogleUser) // Antager at normale brugere er gæster
-        .Select(u => new GuestDTO
+        public async Task<ActionResult<IEnumerable<GuestDTO>>> GetGuests()
         {
-            Id = u.Id,
-            Name = u.Name,
-            Email = u.Email,
-            LastLogin = u.LastLogin,
-            TotalBookings = u.Bookings.Count,
-            IsEmailConfirmed = u.IsEmailConfirmed
-        })
-        .ToListAsync();
+            var guests = await _context.Users
+                .Where(u => !u.IsGoogleUser) // Antager at normale brugere er gæster
+                .Select(u => new GuestDTO
+                {
+                    Id = u.Id,
+                    Name = u.Name,
+                    Email = u.Email,
+                    LastLogin = u.LastLogin,
+                    TotalBookings = u.Bookings.Count,
+                    IsEmailConfirmed = u.IsEmailConfirmed
+                })
+                .ToListAsync();
 
-    return Ok(guests);
-}
+            return Ok(guests);
+        }
 
-        // DELETE: api/Users/5
+        /// <summary>
+        /// Sletter en bruger ud fra ID.
+        /// </summary>
+        /// <param name="id">Brugerens unikke ID.</param>
+        /// <returns>NoContent ved succes, ellers fejlbesked.</returns>
+        /// <response code="404">Bruger ikke fundet.</response>
         [HttpDelete("{id}")]
         public async Task<IActionResult> DeleteUser(string id)
         {
@@ -266,7 +312,12 @@ public async Task<ActionResult<IEnumerable<GuestDTO>>> GetGuests()
             return _context.Users.Any(e => e.Id == id);
         }
 
-        // POST: api/Users/login
+        /// <summary>
+        /// Logger en bruger ind.
+        /// </summary>
+        /// <param name="login">Loginoplysninger (e-mail og adgangskode).</param>
+        /// <returns>JWT access og refresh tokens.</returns>
+        /// <response code="401">Ugyldig email eller adgangskode, eller email ikke bekræftet.</response>
         [HttpPost("login")]
         public async Task<IActionResult> Login(Login login)
         {
@@ -299,6 +350,14 @@ public async Task<ActionResult<IEnumerable<GuestDTO>>> GetGuests()
             );
         }
 
+        /// <summary>
+        /// Fornyer JWT access token ved brug af refresh token.
+        /// </summary>
+        /// <param name="request">Objekt med nuværende access og refresh token.</param>
+        /// <returns>Nyt access og refresh token.</returns>
+        /// <response code="400">Ugyldigt token.</response>
+        /// <response code="401">Ugyldigt refresh token.</response>
+        /// <response code="404">Bruger ikke fundet.</response>
         [HttpPost("refresh-token")]
         public async Task<IActionResult> RefreshToken([FromBody] RefreshTokenRequest request)
         {

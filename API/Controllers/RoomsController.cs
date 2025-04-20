@@ -12,6 +12,9 @@ using DomainModels.DTOs.RoomType;
 
 namespace API.Controllers
 {
+    /// <summary>
+    /// API-controller til håndtering af værelser.
+    /// </summary>
     [Route("api/[controller]")]
     [ApiController]
     public class RoomsController : ControllerBase
@@ -23,7 +26,10 @@ namespace API.Controllers
             _context = context;
         }
 
-        // GET: api/Rooms
+        /// <summary>
+        /// Henter alle værelser.
+        /// </summary>
+        /// <returns>En liste af værelser.</returns>
         [HttpGet]
         public async Task<ActionResult<IEnumerable<GetRoomDTO>>> GetRooms()
         {
@@ -38,7 +44,12 @@ namespace API.Controllers
                 .ToListAsync();
         }
 
-        // GET: api/Rooms/5
+        /// <summary>
+        /// Henter et specifikt værelse ud fra værelsets ID.
+        /// </summary>
+        /// <param name="id">Værelsets unikke ID.</param>
+        /// <returns>Værelsets detaljer.</returns>
+        /// <response code="404">Værelse ikke fundet.</response>
         [HttpGet("{id}")]
         public async Task<ActionResult<GetRoomDTO>> GetRoom(string id)
         {
@@ -60,7 +71,10 @@ namespace API.Controllers
             return room;
         }
 
-        // GET: api/Rooms/details
+        /// <summary>
+        /// Henter detaljer for alle værelser inkl. værelsestype.
+        /// </summary>
+        /// <returns>En liste af værelser med detaljer.</returns>
         [HttpGet("details")]
         public async Task<ActionResult<IEnumerable<RoomDetailsDTO>>> GetRoomDetails()
         {
@@ -83,7 +97,14 @@ namespace API.Controllers
                 .ToListAsync();
         }
 
-        // PUT: api/Rooms/5
+        /// <summary>
+        /// Opdaterer et eksisterende værelse.
+        /// </summary>
+        /// <param name="id">Værelsets unikke ID.</param>
+        /// <param name="getRoomDto">Objekt med opdaterede værelsesdata.</param>
+        /// <returns>NoContent ved succes, ellers fejlbesked.</returns>
+        /// <response code="400">ID matcher ikke.</response>
+        /// <response code="404">Værelse ikke fundet.</response>
         [HttpPut("{id}")]
         public async Task<IActionResult> PutRoom(string id, GetRoomDTO getRoomDto)
         {
@@ -124,7 +145,11 @@ namespace API.Controllers
             return NoContent();
         }
 
-        // POST: api/Rooms
+        /// <summary>
+        /// Opretter et nyt værelse.
+        /// </summary>
+        /// <param name="createRoomDto">Objekt med værelsesdata.</param>
+        /// <returns>Det oprettede værelse.</returns>
         [HttpPost]
         public async Task<ActionResult<CreateRoomDTO>> PostRoom(CreateRoomDTO createRoomDto)
         {
@@ -144,7 +169,12 @@ namespace API.Controllers
             return CreatedAtAction(nameof(GetRoom), new { id = room.Id }, createRoomDto);
         }
 
-        // DELETE: api/Rooms/5
+        /// <summary>
+        /// Sletter et værelse ud fra værelsets ID.
+        /// </summary>
+        /// <param name="id">Værelsets unikke ID.</param>
+        /// <returns>NoContent ved succes, ellers fejlbesked.</returns>
+        /// <response code="404">Værelse ikke fundet.</response>
         [HttpDelete("{id}")]
         public async Task<IActionResult> DeleteRoom(string id)
         {

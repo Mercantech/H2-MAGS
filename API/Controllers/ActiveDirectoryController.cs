@@ -5,6 +5,9 @@ using API.Services.Mapping.Users;
 
 namespace API.Controllers
 {
+    /// <summary>
+    /// API-controller til håndtering af login og status for Active Directory.
+    /// </summary>
     [Route("api/[controller]")]
     [ApiController]
     public class ActiveDirectoryController : ControllerBase
@@ -18,6 +21,12 @@ namespace API.Controllers
             _jwtService = jwtService;
         }
 
+        /// <summary>
+        /// Tjekker om forbindelsen til Active Directory virker.
+        /// </summary>
+        /// <returns>Et objekt med status for AD-forbindelsen.</returns>
+        /// <response code="200">AD-forbindelsen virker.</response>
+        /// <response code="500">Fejl ved kontrol af AD-forbindelse.</response>
         [HttpGet("status")]
         public IActionResult GetStatus()
         {
@@ -33,6 +42,12 @@ namespace API.Controllers
             }
         }
         // POST: api/Users/loginAD
+        /// <summary>
+        /// Logger en bruger ind via Active Directory.
+        /// </summary>
+        /// <param name="login">Loginoplysninger (e-mail og adgangskode).</param>
+        /// <returns>JWT-token og brugerens grupper.</returns>
+        /// <response code="401">Ugyldig email eller adgangskode.</response>
         [HttpPost("loginAD")]
         public async Task<IActionResult> LoginOnAD([FromBody] Login login)
         {
@@ -52,4 +67,4 @@ namespace API.Controllers
             return Ok(new { token, groups });
         }
     }
-} 
+}

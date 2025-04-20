@@ -33,8 +33,8 @@ try
     Console.WriteLine("Prøver at åbne DefaultConnection til Mercantecs Datacenter...");
     var defaultConnection = Configuration.GetConnectionString("DefaultConnection");
     using var connection = new Npgsql.NpgsqlConnection(defaultConnection);
-    connection.Open(); 
-    connectionString = defaultConnection; 
+    connection.Open();
+    connectionString = defaultConnection;
     connection.Close();
 }
 catch
@@ -73,7 +73,7 @@ else
 {
     Console.WriteLine("Google Authentication is configured:");
     Console.WriteLine($"ClientId: {googleClientId}");
-    Console.WriteLine($"ClientSecret: {new string('*', googleClientSecret.Length)}"); 
+    Console.WriteLine($"ClientSecret: {new string('*', googleClientSecret.Length)}");
 }
 
 // Configure JWT Authentication
@@ -135,6 +135,11 @@ builder.Services.AddSwaggerGen(c =>
             }
         }
     );
+
+    // Tilføj dette for at inkludere XML-dokumentation
+    var xmlFile = $"{System.Reflection.Assembly.GetExecutingAssembly().GetName().Name}.xml";
+    var xmlPath = Path.Combine(AppContext.BaseDirectory, xmlFile);
+    c.IncludeXmlComments(xmlPath);
 });
 
 var app = builder.Build();

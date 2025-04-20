@@ -12,6 +12,9 @@ using DomainModels.DTOs.RoomType;
 
 namespace API.Controllers
 {
+    /// <summary>
+    /// API-controller til håndtering af bookinger.
+    /// </summary>
     [Route("api/[controller]")]
     [ApiController]
     public class BookingsController : ControllerBase
@@ -23,7 +26,10 @@ namespace API.Controllers
             _context = context;
         }
 
-        // GET: api/Bookings
+        /// <summary>
+        /// Henter alle bookinger.
+        /// </summary>
+        /// <returns>En liste af bookinger.</returns>
         [HttpGet]
         public async Task<ActionResult<IEnumerable<GetBookingDTO>>> GetBookings()
         {
@@ -39,7 +45,12 @@ namespace API.Controllers
                 .ToListAsync();
         }
 
-        // GET: api/Bookings/5
+        /// <summary>
+        /// Henter en specifik booking ud fra bookingens ID.
+        /// </summary>
+        /// <param name="id">Bookingens unikke ID.</param>
+        /// <returns>Bookingens detaljer.</returns>
+        /// <response code="404">Booking ikke fundet.</response>
         [HttpGet("{id}")]
         public async Task<ActionResult<GetBookingDTO>> GetBooking(string id)
         {
@@ -62,7 +73,14 @@ namespace API.Controllers
             return booking;
         }
 
-        // PUT: api/Bookings/5
+        /// <summary>
+        /// Opdaterer en eksisterende booking.
+        /// </summary>
+        /// <param name="id">Bookingens unikke ID.</param>
+        /// <param name="updateBookingDto">Objekt med opdaterede bookingdata.</param>
+        /// <returns>NoContent ved succes, ellers fejlbesked.</returns>
+        /// <response code="400">ID matcher ikke.</response>
+        /// <response code="404">Booking ikke fundet.</response>
         [HttpPut("{id}")]
         public async Task<IActionResult> PutBooking(string id, UpdateBookingDTO updateBookingDto)
         {
@@ -136,11 +154,15 @@ namespace API.Controllers
             return NoContent();
         }
 
-        // POST: api/Bookings
+        /// <summary>
+        /// Opretter en ny booking.
+        /// </summary>
+        /// <param name="createBookingDto">Objekt med bookingdata.</param>
+        /// <returns>Den oprettede booking.</returns>
         [HttpPost]
         public async Task<ActionResult<Booking>> PostBooking(CreateBookingDTO createBookingDto)
         {
-            var booking = new Booking 
+            var booking = new Booking
             {
                 Id = Guid.NewGuid().ToString("N"),
                 CheckIn = createBookingDto.CheckIn,
@@ -154,7 +176,7 @@ namespace API.Controllers
                 booking.BookingUsers.Add(new BookingUser { UserId = userId });
             }
 
-            foreach (var roomId in createBookingDto.RoomIds)  
+            foreach (var roomId in createBookingDto.RoomIds)
             {
                 booking.BookingRooms.Add(new BookingRoom { RoomId = roomId });
             }
@@ -165,7 +187,12 @@ namespace API.Controllers
             return CreatedAtAction("GetBooking", new { id = booking.Id }, booking);
         }
 
-        // DELETE: api/Bookings/5
+        /// <summary>
+        /// Sletter en booking ud fra bookingens ID.
+        /// </summary>
+        /// <param name="id">Bookingens unikke ID.</param>
+        /// <returns>NoContent ved succes, ellers fejlbesked.</returns>
+        /// <response code="404">Booking ikke fundet.</response>
         [HttpDelete("{id}")]
         public async Task<IActionResult> DeleteBooking(string id)
         {
@@ -186,7 +213,12 @@ namespace API.Controllers
             return _context.Bookings.Any(e => e.Id == id);
         }
 
-        // GET: api/Bookings/user/{userId}
+        /// <summary>
+        /// Henter alle bookinger for en specifik bruger.
+        /// </summary>
+        /// <param name="userId">Brugerens unikke ID.</param>
+        /// <returns>En liste af brugerens bookinger.</returns>
+        /// <response code="404">Bruger ikke fundet.</response>
         [HttpGet("user/{userId}")]
         public async Task<ActionResult<IEnumerable<GetBookingDTO>>> GetUserBookings(string userId)
         {
@@ -238,7 +270,7 @@ namespace API.Controllers
         private static string DetermineBookingStatus(DateTime checkIn, DateTime checkOut)
         {
             var now = DateTime.Now;
-            
+
             if (now > checkOut)
                 return "Afsluttet";
             if (now >= checkIn && now <= checkOut)
