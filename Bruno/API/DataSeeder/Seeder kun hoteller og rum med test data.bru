@@ -1,0 +1,23 @@
+meta {
+  name: Seeder kun hoteller og rum med test data.
+  type: http
+  seq: 5
+  tags: [
+    Seeder
+  ]
+}
+
+post {
+  url: {{baseUrl}}/api/DataSeeder/seed-hotels
+  body: none
+  auth: none
+}
+
+params:query {
+  ~hotelCount: 
+  ~roomsPerHotel: 
+}
+
+headers {
+  Authorization: {{apiKey}}
+}

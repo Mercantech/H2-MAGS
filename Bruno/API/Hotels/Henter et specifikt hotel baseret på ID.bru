@@ -1,0 +1,26 @@
+meta {
+  name: Henter et specifikt hotel baseret på ID.
+  type: http
+  seq: 4
+}
+
+get {
+  url: {{baseUrl}}/api/Hotels/:id
+  body: none
+  auth: none
+}
+
+params:path {
+  id: {{hotel-id}}
+}
+
+headers {
+  Authorization: {{apiKey}}
+}
+
+tests {
+  // Test status kode
+  test("Status kode skal være 200 OK", function() {
+    expect(res.status).to.equal(200);
+  });
+}

@@ -1,0 +1,99 @@
+meta {
+  name: Create General Ticket
+  type: http
+  seq: 11
+  description: |
+    Opretter et generelt ticket uden booking reference.
+    Dette simulerer en bruger der har et generelt spørgsmål eller problem.
+    
+    Features tested:
+    - Ticket oprettelse uden booking
+    - Generel support kategori
+    - Problem management
+    - ITIL 4 compliance
+}
+
+post {
+  url: {{baseUrl}}
+  body: json
+  auth: bearer
+}
+
+auth:bearer {
+  token: {{authToken}}
+}
+
+body:json {
+  {
+    "title": "WiFi forbindelse problemer i lobby",
+    "description": "Hej, jeg har problemer med WiFi forbindelsen i hotel lobbyen. Forbindelsen er ustabil og går ofte i stykker. Kan I hjælpe?",
+    "serviceType": "Maintenance",
+    "category": "Problem",
+    "subCategory": "Network Issues",
+    "priority": "High",
+    "riskLevel": "Medium",
+    "impact": "High"
+  }
+}
+
+tests {
+  test("Status code is 201 Created", function() {
+    expect(res.getStatus()).to.equal(201);
+  });
+  
+  test("Response contains ticket data", function() {
+    expect(res.getBody()).to.have.property("data");
+    expect(res.getBody().data).to.have.property("id");
+    expect(res.getBody().data).to.have.property("ticketNumber");
+    expect(res.getBody().data).to.have.property("title");
+  });
+  
+  test("Ticket has correct service type", function() {
+    expect(res.getBody().data).to.have.property("serviceType");
+    expect(res.getBody().data.serviceType).to.equal("Maintenance");
+  });
+  
+  test("Ticket has correct category", function() {
+    expect(res.getBody().data).to.have.property("category");
+    expect(res.getBody().data.category).to.equal("Problem");
+  });
+  
+  test("Ticket has correct priority", function() {
+    expect(res.getBody().data).to.have.property("priority");
+    expect(res.getBody().data.priority).to.equal("High");
+  });
+  
+  test("Ticket has correct risk level", function() {
+    expect(res.getBody().data).to.have.property("riskLevel");
+    expect(res.getBody().data.riskLevel).to.equal("Medium");
+  });
+  
+  test("Ticket has correct impact", function() {
+    expect(res.getBody().data).to.have.property("impact");
+    expect(res.getBody().data.impact).to.equal("High");
+  });
+  
+  test("Ticket status is Open", function() {
+    expect(res.getBody().data).to.have.property("status");
+    expect(res.getBody().data.status).to.equal("Open");
+  });
+  
+  test("Ticket has no booking reference", function() {
+    expect(res.getBody().data).to.have.property("bookingId");
+    expect(res.getBody().data.bookingId).to.be.null;
+  });
+  
+  test("Ticket has requester information", function() {
+    expect(res.getBody().data).to.have.property("requesterId");
+    expect(res.getBody().data.requesterId).to.equal(userId);
+  });
+  
+  test("Response time is acceptable", function() {
+    expect(res.getResponseTime()).to.be.below(2000);
+  });
+}
+
+vars:pre-request {
+  // Set generalTicketId for use in subsequent requests
+  generalTicketId: res.getBody().data.id
+}

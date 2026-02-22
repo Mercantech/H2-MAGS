@@ -1,0 +1,29 @@
+meta {
+  name: Henter oversigt over test resultater
+  type: http
+  seq: 1
+}
+
+get {
+  url: {{baseUrl}}/api/BrunoTestResults/overview
+  body: none
+  auth: none
+}
+
+headers {
+  Content-Type: application/json
+}
+
+tests {
+  test("Status kode skal være 200 OK", function() {
+    expect(res.getStatus()).to.equal(200);
+  });
+  
+  test("Response skal være et objekt", function() {
+    expect(res.getBody()).to.be.an('object');
+  });
+  
+  test("Response tid skal være under 1 sekund", function() {
+    expect(res.getResponseTime()).to.be.below(1000);
+  });
+}

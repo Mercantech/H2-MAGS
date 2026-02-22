@@ -1,0 +1,26 @@
+meta {
+  name: Henter et specifikt rum baseret på ID.
+  type: http
+  seq: 3
+}
+
+get {
+  url: {{baseUrl}}/api/Rooms/:id
+  body: none
+  auth: none
+}
+
+params:path {
+  id: {{room-id}}
+}
+
+headers {
+  Authorization: {{apiKey}}
+}
+
+tests {
+  // Test status kode
+  test("Status kode skal være 200 OK", function() {
+    expect(res.status).to.equal(200);
+  });
+}

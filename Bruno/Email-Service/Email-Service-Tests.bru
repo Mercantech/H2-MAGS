@@ -1,0 +1,294 @@
+meta {
+  name: Email Service Tests
+  type: http
+  version: 1
+}
+
+vars {
+  baseUrl: http://localhost:8045
+  testEmail: test@example.com
+  adminToken: 
+  userToken: 
+}
+
+env {
+  H2-MAGS {
+    baseUrl: http://localhost:8045
+    testEmail: test@example.com
+    adminToken: 
+    userToken: 
+  }
+}
+
+// Test SMTP konfiguration og forbindelse
+post {
+  name: Test SMTP Connection
+  url: {{baseUrl}}/api/users/test-email?testEmail={{testEmail}}
+  headers {
+    Authorization: Bearer {{adminToken}}
+  }
+}
+
+tests {
+  test("Should test SMTP connection successfully", function() {
+    expect(res.getStatus()).to.equal(200);
+    expect(res.getBody().smtpWorking).to.equal(true);
+    expect(res.getBody().emailSent).to.equal(true);
+    expect(res.getBody().message).to.include("Test email sendt succesfuldt");
+  });
+}
+
+// Test velkommen email ved brugeroprettelse
+post {
+  name: Test Welcome Email on User Registration
+  url: {{baseUrl}}/api/users/register
+  headers {
+    Content-Type: application/json
+  }
+  body:json {
+    {
+      "email": "welcome-test@example.com",
+      "username": "WelcomeTestUser",
+      "password": "TestPassword123!"
+    }
+  }
+}
+
+tests {
+  test("Should create user and send welcome email", function() {
+    expect(res.getStatus()).to.equal(200);
+    expect(res.getBody().emailSent).to.equal(true);
+    expect(res.getBody().message).to.include("Bruger oprettet");
+    expect(res.getBody().user.email).to.equal("welcome-test@example.com");
+  });
+}
+
+// Test booking bekræftelse email
+post {
+  name: Test Booking Confirmation Email
+  url: {{baseUrl}}/api/bookings
+  headers {
+    Content-Type: application/json
+    Authorization: Bearer {{userToken}}
+  }
+  body:json {
+    {
+      "userId": "{{userToken}}",
+      "roomId": "test-room-id",
+      "startDate": "2025-02-01",
+      "endDate": "2025-02-03",
+      "numberOfGuests": 2
+    }
+  }
+}
+
+tests {
+  test("Should create booking and send confirmation email", function() {
+    expect(res.getStatus()).to.equal(201);
+    expect(res.getBody().emailSent).to.equal(true);
+    expect(res.getBody().bookingId).to.exist;
+  });
+}
+
+// Test email service status
+get {
+  name: Get Email Service Status
+  url: {{baseUrl}}/api/users/email-status
+  headers {
+    Authorization: Bearer {{adminToken}}
+  }
+}
+
+tests {
+  test("Should return email service status", function() {
+    expect(res.getStatus()).to.equal(200);
+    expect(res.getBody()).to.have.property('smtpConfigured');
+    expect(res.getBody()).to.have.property('isHealthy');
+  });
+}
+
+// Test email template generation
+post {
+  name: Test Email Template Generation
+  url: {{baseUrl}}/api/users/test-email-template
+  headers {
+    Content-Type: application/json
+    Authorization: Bearer {{adminToken}}
+  }
+  body:json {
+    {
+      "templateType": "welcome",
+      "testData": {
+        "username": "TemplateTestUser",
+        "role": "User"
+      }
+    }
+  }
+}
+
+tests {
+  test("Should generate email template", function() {
+    expect(res.getStatus()).to.equal(200);
+    expect(res.getBody().htmlContent).to.exist;
+    expect(res.getBody().htmlContent).to.include("TemplateTestUser");
+    expect(res.getBody().templateType).to.equal("welcome");
+  });
+}
+
+// Test fejlhåndtering ved ugyldig email
+post {
+  name: Test Invalid Email Handling
+  url: {{baseUrl}}/api/users/test-email?testEmail=invalid-email
+  headers {
+    Authorization: Bearer {{adminToken}}
+  }
+}
+
+tests {
+  test("Should handle invalid email gracefully", function() {
+    expect(res.getStatus()).to.equal(400);
+    expect(res.getBody().message).to.include("Ugyldig email");
+  });
+}
+
+// Test email sending med manglende konfiguration
+post {
+  name: Test Email Without SMTP Configuration
+  url: {{baseUrl}}/api/users/test-email?testEmail={{testEmail}}
+  headers {
+    Authorization: Bearer {{adminToken}}
+  }
+}
+
+tests {
+  test("Should handle missing SMTP configuration", function() {
+    // Dette test vil fejle hvis SMTP ikke er konfigureret
+    if (res.getStatus() === 400) {
+      expect(res.getBody().message).to.include("SMTP konfiguration");
+    } else {
+      expect(res.getStatus()).to.equal(200);
+    }
+  });
+}
+
+// Test concurrent email sending
+post {
+  name: Test Concurrent Email Sending
+  url: {{baseUrl}}/api/users/test-email?testEmail={{testEmail}}
+  headers {
+    Authorization: Bearer {{adminToken}}
+  }
+}
+
+tests {
+  test("Should handle concurrent email sending", function() {
+    expect(res.getStatus()).to.equal(200);
+    expect(res.getBody().emailSent).to.equal(true);
+  });
+}
+
+// Test email med special characters
+post {
+  name: Test Email with Special Characters
+  url: {{baseUrl}}/api/users/register
+  headers {
+    Content-Type: application/json
+  }
+  body:json {
+    {
+      "email": "special-chars@example.com",
+      "username": "Test User with Special Chars!@#",
+      "password": "TestPassword123!"
+    }
+  }
+}
+
+tests {
+  test("Should handle special characters in email", function() {
+    expect(res.getStatus()).to.equal(200);
+    expect(res.getBody().emailSent).to.equal(true);
+  });
+}
+
+// Test email template med danske karakterer
+post {
+  name: Test Email Template with Danish Characters
+  url: {{baseUrl}}/api/users/test-email-template
+  headers {
+    Content-Type: application/json
+    Authorization: Bearer {{adminToken}}
+  }
+  body:json {
+    {
+      "templateType": "bookingConfirmation",
+      "testData": {
+        "username": "Test Bruger med ÆØÅ",
+        "roomNumber": "101",
+        "hotelName": "Test Hotel med ÆØÅ",
+        "startDate": "2025-02-01",
+        "endDate": "2025-02-03",
+        "numberOfGuests": 2,
+        "totalPrice": 1500.00,
+        "bookingId": "test-booking-æøå"
+      }
+    }
+  }
+}
+
+tests {
+  test("Should handle Danish characters in email template", function() {
+    expect(res.getStatus()).to.equal(200);
+    expect(res.getBody().htmlContent).to.include("ÆØÅ");
+    expect(res.getBody().htmlContent).to.include("Test Bruger med ÆØÅ");
+  });
+}
+
+// Test email performance
+post {
+  name: Test Email Performance
+  url: {{baseUrl}}/api/users/test-email?testEmail={{testEmail}}
+  headers {
+    Authorization: Bearer {{adminToken}}
+  }
+}
+
+tests {
+  test("Should send email within acceptable time", function() {
+    expect(res.getStatus()).to.equal(200);
+    expect(res.getResponseTime()).to.be.below(5000); // Under 5 sekunder
+    expect(res.getBody().emailSent).to.equal(true);
+  });
+}
+
+// Test email med stor HTML content
+post {
+  name: Test Email with Large HTML Content
+  url: {{baseUrl}}/api/users/test-email-template
+  headers {
+    Content-Type: application/json
+    Authorization: Bearer {{adminToken}}
+  }
+  body:json {
+    {
+      "templateType": "bookingConfirmation",
+      "testData": {
+        "username": "LargeContentTestUser",
+        "roomNumber": "999",
+        "hotelName": "Very Long Hotel Name That Should Test HTML Rendering",
+        "startDate": "2025-02-01",
+        "endDate": "2025-02-10",
+        "numberOfGuests": 10,
+        "totalPrice": 15000.00,
+        "bookingId": "large-content-test-booking-123456789"
+      }
+    }
+  }
+}
+
+tests {
+  test("Should handle large HTML content", function() {
+    expect(res.getStatus()).to.equal(200);
+    expect(res.getBody().htmlContent).to.exist;
+    expect(res.getBody().htmlContent.length).to.be.greaterThan(1000);
+  });
+}

@@ -1,0 +1,111 @@
+meta {
+  name: Login - New User
+  type: http
+  seq: 3
+}
+
+post {
+  url: {{baseUrl}}/api/Users/login
+  body: json
+  auth: inherit
+}
+
+body:json {
+  {
+    "email": "{{User-Email}}",
+    "password": "{{User-Password}}"
+  }
+}
+
+script:post-response {
+  // Gem JWT token i environment variablen JWT-User
+  try {
+    if (res.body && res.body.token) {
+      console.log("User login succesfuld!");
+      console.log("JWT Token gemt i environment variablen JWT-User");
+      
+      // Gem token i environment variablen
+      bru.setEnvVar("JWT-User", res.body.token);
+      
+      // Log bruger information
+      if (res.body.user) {
+        console.log("Bruger: " + res.body.user.username + " (" + res.body.user.role + ")");
+        console.log("User ID: " + res.body.user.id);
+      }
+    } else {
+      console.log("Ingen token fundet i responset");
+      console.log("Response body:", res.body);
+    }
+  } catch (error) {
+    console.log("Fejl ved håndtering af user login response: " + error.message);
+  }
+}
+
+tests {
+  // Test login med korrekt password
+  
+  // Test response status
+  test("User login returnerer 200 OK", function() {
+    expect(res.status).to.equal(200);
+  });
+  
+  // Test response struktur
+  test("Response har korrekt JSON struktur", function() {
+    expect(res.body).to.have.property("message");
+    expect(res.body).to.have.property("token");
+    expect(res.body).to.have.property("user");
+  });
+  
+  // Test success message
+  test("Success message er korrekt", function() {
+    expect(res.body.message).to.equal("Login godkendt!");
+  });
+  
+  // Test JWT token
+  test("JWT token eksisterer og er ikke tom", function() {
+    expect(res.body.token).to.be.a("string");
+    expect(res.body.token).to.not.be.empty;
+    expect(res.body.token).to.have.length.greaterThan(100);
+  });
+  
+  // Test token format (JWT har 3 dele adskilt af punktum)
+  test("JWT token har korrekt format", function() {
+    const tokenParts = res.body.token.split(".");
+    expect(tokenParts).to.have.length(3);
+  });
+  
+  // Test user objekt
+  test("User objekt har alle påkrævede felter", function() {
+    expect(res.body.user).to.have.property("id");
+    expect(res.body.user).to.have.property("email");
+    expect(res.body.user).to.have.property("username");
+    expect(res.body.user).to.have.property("role");
+  });
+  
+  // Test user ID format (UUID)
+  test("User ID er et gyldigt UUID", function() {
+    const uuidRegex = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+    expect(res.body.user.id).to.match(uuidRegex);
+  });
+  
+  // Test user rolle (skal være "User" ikke "Admin")
+  test("Bruger har User rolle", function() {
+    expect(res.body.user.role).to.equal("User");
+  });
+  
+  // Test email format
+  test("Email er i korrekt format", function() {
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    expect(res.body.user.email).to.match(emailRegex);
+  });
+  
+  // Test response tid
+  test("Response tid er under 2 sekunder", function() {
+    expect(res.responseTime).to.be.lessThan(2000);
+  });
+  
+}
+
+settings {
+  encodeUrl: true
+}

@@ -1,0 +1,88 @@
+meta {
+  name: Get All Tickets
+  type: http
+  seq: 2
+  description: |
+    Henter alle tickets i systemet.
+    Dette simulerer en support medarbejder der skal se alle åbne tickets.
+    
+    Features tested:
+    - Paginering
+    - Filtrering
+    - Sortering
+    - Bruger adgangskontrol
+}
+
+get {
+  url: {{baseUrl}}
+  query: {
+    page: 1
+    pageSize: 10
+    status: "Open"
+    serviceType: "Cleaning"
+    sortBy: "createdAt"
+    sortOrder: "desc"
+  }
+  auth: bearer
+}
+
+auth:bearer {
+  token: {{authToken}}
+}
+
+tests {
+  test("Status code is 200 OK", function() {
+    expect(res.getStatus()).to.equal(200);
+  });
+  
+  test("Response contains tickets array", function() {
+    expect(res.getBody()).to.have.property("data");
+    expect(res.getBody().data).to.be.an("array");
+  });
+  
+  test("Response contains pagination info", function() {
+    expect(res.getBody()).to.have.property("pagination");
+    expect(res.getBody().pagination).to.have.property("page");
+    expect(res.getBody().pagination).to.have.property("pageSize");
+    expect(res.getBody().pagination).to.have.property("totalCount");
+  });
+  
+  test("Tickets have required fields", function() {
+    if (res.getBody().data.length > 0) {
+      const ticket = res.getBody().data[0];
+      expect(ticket).to.have.property("id");
+      expect(ticket).to.have.property("ticketNumber");
+      expect(ticket).to.have.property("title");
+      expect(ticket).to.have.property("status");
+      expect(ticket).to.have.property("priority");
+      expect(ticket).to.have.property("serviceType");
+    }
+  });
+  
+  test("Tickets are filtered by status", function() {
+    res.getBody().data.forEach(ticket => {
+      expect(ticket.status).to.equal("Open");
+    });
+  });
+  
+  test("Tickets are filtered by service type", function() {
+    res.getBody().data.forEach(ticket => {
+      expect(ticket.serviceType).to.equal("Cleaning");
+    });
+  });
+  
+  test("Tickets are sorted by creation date (newest first)", function() {
+    if (res.getBody().data.length > 1) {
+      const tickets = res.getBody().data;
+      for (let i = 0; i < tickets.length - 1; i++) {
+        const current = new Date(tickets[i].createdAt);
+        const next = new Date(tickets[i + 1].createdAt);
+        expect(current.getTime()).to.be.at.least(next.getTime());
+      }
+    }
+  });
+  
+  test("Response time is acceptable", function() {
+    expect(res.getResponseTime()).to.be.below(2000);
+  });
+}

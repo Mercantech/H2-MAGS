@@ -1,0 +1,53 @@
+meta {
+  name: Login - New User Error
+  type: http
+  seq: 11
+}
+
+post {
+  url: {{baseUrl}}/api/Users/login
+  body: json
+  auth: inherit
+}
+
+body:json {
+  {
+    "email": "{{User-Email}}",
+    "password": "WrongPassword1234!"
+  }
+}
+
+script:post-response {
+  // Gem JWT token i environment variablen JWT-User
+  try {
+    if (res.body && res.body.token) {
+      console.log("User login succesfuld!");
+      console.log("JWT Token gemt i environment variablen JWT-User");
+      
+      // Gem token i environment variablen
+      bru.setEnvVar("JWT-User", res.body.token);
+      
+      // Log bruger information
+      if (res.body.user) {
+        console.log("Bruger: " + res.body.user.username + " (" + res.body.user.role + ")");
+        console.log("User ID: " + res.body.user.id);
+      }
+    } else {
+      console.log("Ingen token fundet i responset");
+      console.log("Response body:", res.body);
+    }
+  } catch (error) {
+    console.log("Fejl ved håndtering af user login response: " + error.message);
+  }
+}
+
+tests {
+  // Test response status
+  test("User login returnerer 401 fordi det er en forkert kode", function() {
+    expect(res.status).to.equal(401);
+  });
+}
+
+settings {
+  encodeUrl: true
+}

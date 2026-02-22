@@ -1,0 +1,418 @@
+@using Blazor.Services
+@using DomainModels
+@inject APIService APIService
+@inject AuthenticationService AuthService
+@inject ILogger<TicketCreation> Logger
+
+<div class="ticket-creation-container">
+    <h3>Opret Nyt Ticket</h3>
+    
+    <EditForm Model="ticketCreateDto" OnValidSubmit="CreateTicket">
+        <DataAnnotationsValidator />
+        
+        <div class="form-group mb-3">
+            <label for="title">Titel *</label>
+            <InputText id="title" @bind-Value="ticketCreateDto.Title" class="form-control" />
+            <ValidationMessage For="@(() => ticketCreateDto.Title)" />
+        </div>
+
+        <div class="form-group mb-3">
+            <label for="description">Beskrivelse *</label>
+            <InputTextArea id="description" @bind-Value="ticketCreateDto.Description" class="form-control" rows="4" />
+            <ValidationMessage For="@(() => ticketCreateDto.Description)" />
+        </div>
+
+        <div class="row">
+            <div class="col-md-6">
+                <div class="form-group mb-3">
+                    <label for="serviceType">Service Type *</label>
+                    <InputSelect id="serviceType" @bind-Value="ticketCreateDto.ServiceType" class="form-control">
+                        <option value="">Vælg service type</option>
+                        <option value="Cleaning">Rengøring</option>
+                        <option value="RoomService">Room Service</option>
+                        <option value="Maintenance">Vedligeholdelse</option>
+                        <option value="General">Generelt</option>
+                    </InputSelect>
+                    <ValidationMessage For="@(() => ticketCreateDto.ServiceType)" />
+                </div>
+            </div>
+            
+            <div class="col-md-6">
+                <div class="form-group mb-3">
+                    <label for="category">Kategori *</label>
+                    <InputSelect id="category" @bind-Value="ticketCreateDto.Category" class="form-control">
+                        <option value="">Vælg kategori</option>
+                        <option value="Incident">Incident</option>
+                        <option value="Service Request">Service Request</option>
+                        <option value="Problem">Problem</option>
+                        <option value="Change">Change</option>
+                    </InputSelect>
+                    <ValidationMessage For="@(() => ticketCreateDto.Category)" />
+                </div>
+            </div>
+        </div>
+
+        <div class="row">
+            <div class="col-md-6">
+                <div class="form-group mb-3">
+                    <label for="priority">Prioritet *</label>
+                    <InputSelect id="priority" @bind-Value="ticketCreateDto.Priority" class="form-control">
+                        <option value="Low">Lav</option>
+                        <option value="Medium">Medium</option>
+                        <option value="High">Høj</option>
+                        <option value="Critical">Kritisk</option>
+                    </InputSelect>
+                    <ValidationMessage For="@(() => ticketCreateDto.Priority)" />
+                </div>
+            </div>
+            
+            <div class="col-md-6">
+                <div class="form-group mb-3">
+                    <label for="subCategory">Underkategori</label>
+                    <InputText id="subCategory" @bind-Value="ticketCreateDto.SubCategory" class="form-control" placeholder="Valgfri underkategori" />
+                </div>
+            </div>
+        </div>
+
+        <div class="form-group mb-3">
+            <label for="bookingId">Relateret Booking (valgfri)</label>
+            <div class="booking-selection">
+                <div class="booking-filters mb-2">
+                    <div class="btn-group" role="group">
+                        <button type="button" class="btn @(bookingFilter == "all" ? "btn-primary" : "btn-outline-primary")" @onclick="@(() => SetBookingFilter("all"))">
+                            Alle
+                        </button>
+                        <button type="button" class="btn @(bookingFilter == "current" ? "btn-primary" : "btn-outline-primary")" @onclick="@(() => SetBookingFilter("current"))">
+                            Nuværende
+                        </button>
+                        <button type="button" class="btn @(bookingFilter == "upcoming" ? "btn-primary" : "btn-outline-primary")" @onclick="@(() => SetBookingFilter("upcoming"))">
+                            Fremtidige
+                        </button>
+                        <button type="button" class="btn @(bookingFilter == "past" ? "btn-primary" : "btn-outline-primary")" @onclick="@(() => SetBookingFilter("past"))">
+                            Tidligere
+                        </button>
+                    </div>
+                </div>
+                <InputSelect id="bookingId" @bind-Value="selectedBookingId" class="form-control" @onchange="OnBookingChanged">
+                    <option value="">Vælg en booking (valgfri)</option>
+                    @if (isLoadingBookings)
+                    {
+                        <option disabled>Henter bookinger...</option>
+                    }
+                    else
+                    {
+                        @foreach (var booking in filteredBookings)
+                        {
+                            <option value="@booking.Id">@GetBookingDisplayText(booking)</option>
+                        }
+                    }
+                </InputSelect>
+                @if (selectedBooking != null)
+                {
+                    <div class="booking-details mt-2">
+                        <small class="text-muted">
+                            <strong>@selectedBooking.HotelName</strong> - Rum @selectedBooking.RoomNumber (@selectedBooking.RoomType)<br>
+                            @selectedBooking.StartDate.ToString("dd/MM/yyyy") - @selectedBooking.EndDate.ToString("dd/MM/yyyy") 
+                            (@GetBookingStatusText(selectedBooking.BookingStatus))
+                        </small>
+                    </div>
+                }
+            </div>
+        </div>
+
+        <div class="form-actions">
+            <button type="submit" class="btn btn-primary" disabled="@isCreating">
+                @if (isCreating)
+                {
+                    <span class="spinner-border spinner-border-sm me-2" role="status"></span>
+                }
+                Opret Ticket
+            </button>
+            <button type="button" class="btn btn-secondary ms-2" @onclick="ResetForm">
+                Nulstil
+            </button>
+        </div>
+    </EditForm>
+
+    @if (!string.IsNullOrEmpty(createdTicketId))
+    {
+        <div class="alert alert-success mt-3">
+            <h5>Ticket Oprettet!</h5>
+            <p>Dit ticket er blevet oprettet med ID: <strong>@createdTicketId</strong></p>
+            <p>Du kan nu starte en live chat med support ved at klikke på knappen nedenfor.</p>
+            <button class="btn btn-success" @onclick="StartChat">
+                Start Live Chat
+            </button>
+        </div>
+    }
+
+    @if (!string.IsNullOrEmpty(errorMessage))
+    {
+        <div class="alert alert-danger mt-3">
+            <strong>Fejl:</strong> @errorMessage
+        </div>
+    }
+</div>
+
+@code {
+    [Parameter] public string UserId { get; set; } = string.Empty;
+    [Parameter] public string Username { get; set; } = string.Empty;
+    [Parameter] public EventCallback<string> OnTicketCreated { get; set; }
+
+    private TicketCreateDto ticketCreateDto = new();
+    private bool isCreating = false;
+    private string createdTicketId = string.Empty;
+    private string errorMessage = string.Empty;
+    
+    // Booking related properties
+    private List<BookingGetDto> allBookings = new();
+    private List<BookingGetDto> filteredBookings = new();
+    private string selectedBookingId = string.Empty;
+    private BookingGetDto? selectedBooking = null;
+    private string bookingFilter = "all";
+    private bool isLoadingBookings = false;
+
+    protected override async Task OnInitializedAsync()
+    {
+        // Set default values
+        ticketCreateDto.Priority = "Medium";
+        
+        // Ensure authentication is initialized
+        await AuthService.InitializeAsync();
+        
+        // Load user's bookings
+        await LoadBookings();
+    }
+
+    private async Task CreateTicket()
+    {
+        isCreating = true;
+        errorMessage = string.Empty;
+        createdTicketId = string.Empty;
+
+        try
+        {
+            var response = await APIService.CreateTicketAsync(ticketCreateDto);
+            if (response.IsSuccess)
+            {
+                createdTicketId = response.Data?.Id ?? string.Empty;
+                Logger.LogInformation("Ticket oprettet: {TicketId}", createdTicketId);
+                
+                // Notify parent component
+                await OnTicketCreated.InvokeAsync(createdTicketId);
+            }
+            else
+            {
+                errorMessage = response.ErrorMessage ?? "Ukendt fejl ved oprettelse af ticket";
+            }
+        }
+        catch (Exception ex)
+        {
+            Logger.LogError(ex, "Fejl ved oprettelse af ticket");
+            errorMessage = "Der opstod en fejl ved oprettelse af ticket";
+        }
+        finally
+        {
+            isCreating = false;
+        }
+    }
+
+    private void ResetForm()
+    {
+        ticketCreateDto = new TicketCreateDto
+        {
+            Priority = "Medium"
+        };
+        createdTicketId = string.Empty;
+        errorMessage = string.Empty;
+    }
+
+    private void StartChat()
+    {
+        // This will be handled by the parent component
+        OnTicketCreated.InvokeAsync(createdTicketId);
+    }
+
+    private async Task LoadBookings()
+    {
+        try
+        {
+            isLoadingBookings = true;
+            StateHasChanged();
+            
+            var response = await APIService.GetMyBookingsAsync();
+            if (response.IsSuccess && response.Data != null)
+            {
+                allBookings = response.Data.ToList();
+                ApplyBookingFilter();
+            }
+            else
+            {
+                Logger.LogError("Fejl ved hentning af bookinger: {Error}", response.ErrorMessage);
+            }
+        }
+        catch (Exception ex)
+        {
+            Logger.LogError(ex, "Exception ved hentning af bookinger");
+        }
+        finally
+        {
+            isLoadingBookings = false;
+            StateHasChanged();
+        }
+    }
+
+    private void SetBookingFilter(string filter)
+    {
+        bookingFilter = filter;
+        ApplyBookingFilter();
+    }
+
+    private void ApplyBookingFilter()
+    {
+        var now = DateTime.Now;
+        filteredBookings = bookingFilter switch
+        {
+            "current" => allBookings.Where(b => b.StartDate <= now && b.EndDate >= now).ToList(),
+            "upcoming" => allBookings.Where(b => b.StartDate > now).ToList(),
+            "past" => allBookings.Where(b => b.EndDate < now).ToList(),
+            _ => allBookings.ToList()
+        };
+        
+        // If selected booking is no longer in filtered list, clear selection
+        if (selectedBooking != null && !filteredBookings.Any(b => b.Id == selectedBooking.Id))
+        {
+            selectedBookingId = string.Empty;
+            selectedBooking = null;
+            ticketCreateDto.BookingId = string.Empty;
+        }
+        
+        StateHasChanged();
+    }
+
+    private void OnBookingChanged(ChangeEventArgs e)
+    {
+        selectedBookingId = e.Value?.ToString() ?? string.Empty;
+        selectedBooking = allBookings.FirstOrDefault(b => b.Id == selectedBookingId);
+        ticketCreateDto.BookingId = selectedBookingId;
+    }
+
+    private string GetBookingDisplayText(BookingGetDto booking)
+    {
+        var status = GetBookingStatusText(booking.BookingStatus);
+        var dateRange = $"{booking.StartDate:dd/MM/yyyy} - {booking.EndDate:dd/MM/yyyy}";
+        return $"{booking.HotelName} - Rum {booking.RoomNumber} ({booking.RoomType}) - {dateRange} - {status}";
+    }
+
+    private string GetBookingStatusText(string status)
+    {
+        return status switch
+        {
+            "Confirmed" => "Bekræftet",
+            "Pending" => "Afventer",
+            "Cancelled" => "Annulleret",
+            "CheckedIn" => "Indtjekket",
+            "CheckedOut" => "Udtjekket",
+            _ => status
+        };
+    }
+}
+
+<style>
+    .ticket-creation-container {
+        max-width: 800px;
+        margin: 0 auto;
+        padding: 2rem;
+        background-color: #f8f9fa;
+        border-radius: 8px;
+        box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+    }
+
+    .form-group label {
+        font-weight: 600;
+        margin-bottom: 0.5rem;
+        display: block;
+    }
+
+    .form-control {
+        border-radius: 6px;
+        border: 1px solid #ced4da;
+        padding: 0.75rem;
+    }
+
+    .form-control:focus {
+        border-color: #007bff;
+        box-shadow: 0 0 0 0.2rem rgba(0, 123, 255, 0.25);
+    }
+
+    .form-actions {
+        margin-top: 2rem;
+        padding-top: 1rem;
+    }
+
+    .booking-selection {
+        background-color: #f8f9fa;
+        padding: 1rem;
+        border-radius: 6px;
+        border: 1px solid #dee2e6;
+    }
+
+    .booking-filters .btn-group .btn {
+        font-size: 0.875rem;
+        padding: 0.375rem 0.75rem;
+    }
+
+    .booking-details {
+        background-color: #e9ecef;
+        padding: 0.75rem;
+        border-radius: 4px;
+        border-left: 3px solid #007bff;
+    }
+
+    .btn-outline-primary {
+        color: #007bff;
+        border-color: #007bff;
+    }
+
+    .btn-outline-primary:hover {
+        color: #fff;
+        background-color: #007bff;
+        border-color: #007bff;
+    }
+
+    .btn {
+        padding: 0.75rem 1.5rem;
+        border-radius: 6px;
+        font-weight: 600;
+    }
+
+    .btn-primary {
+        background-color: #007bff;
+        border-color: #007bff;
+    }
+
+    .btn-primary:hover {
+        background-color: #0056b3;
+        border-color: #0056b3;
+    }
+
+    .btn-success {
+        background-color: #28a745;
+        border-color: #28a745;
+    }
+
+    .btn-success:hover {
+        background-color: #1e7e34;
+        border-color: #1e7e34;
+    }
+
+    .alert {
+        border-radius: 6px;
+        padding: 1rem;
+    }
+
+    .spinner-border-sm {
+        width: 1rem;
+        height: 1rem;
+    }
+</style>

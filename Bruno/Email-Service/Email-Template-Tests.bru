@@ -1,0 +1,260 @@
+meta {
+  name: Email Template Tests
+  type: http
+  version: 1
+}
+
+vars {
+  baseUrl: http://localhost:8045
+  adminToken: 
+}
+
+env {
+  H2-MAGS-Email {
+    baseUrl: http://localhost:8045
+    adminToken: 
+  }
+}
+
+// Test velkommen email template
+post {
+  name: Test Welcome Email Template
+  url: {{baseUrl}}/api/users/test-email-template
+  headers {
+    Content-Type: application/json
+    Authorization: Bearer {{adminToken}}
+  }
+  body:json {
+    {
+      "templateType": "welcome",
+      "testData": {
+        "username": "TemplateTestUser",
+        "role": "User"
+      }
+    }
+  }
+}
+
+tests {
+  test("Should generate welcome email template", function() {
+    expect(res.getStatus()).to.equal(200);
+    expect(res.getBody().htmlContent).to.exist;
+    expect(res.getBody().templateType).to.equal("welcome");
+    expect(res.getBody().htmlContent).to.include("TemplateTestUser");
+    expect(res.getBody().htmlContent).to.include("Velkommen til H2-MAGS");
+  });
+  
+  test("Should contain proper HTML structure", function() {
+    expect(res.getBody().htmlContent).to.include("<!DOCTYPE html>");
+    expect(res.getBody().htmlContent).to.include("<html lang='da'>");
+    expect(res.getBody().htmlContent).to.include("</html>");
+  });
+  
+  test("Should contain CSS styling", function() {
+    expect(res.getBody().htmlContent).to.include("<style>");
+    expect(res.getBody().htmlContent).to.include("font-family");
+    expect(res.getBody().htmlContent).to.include("background-color");
+  });
+}
+
+// Test booking bekræftelse email template
+post {
+  name: Test Booking Confirmation Email Template
+  url: {{baseUrl}}/api/users/test-email-template
+  headers {
+    Content-Type: application/json
+    Authorization: Bearer {{adminToken}}
+  }
+  body:json {
+    {
+      "templateType": "bookingConfirmation",
+      "testData": {
+        "username": "BookingTestUser",
+        "roomNumber": "101",
+        "hotelName": "Test Hotel",
+        "startDate": "2025-02-01",
+        "endDate": "2025-02-03",
+        "numberOfGuests": 2,
+        "totalPrice": 1500.00,
+        "bookingId": "test-booking-123"
+      }
+    }
+  }
+}
+
+tests {
+  test("Should generate booking confirmation template", function() {
+    expect(res.getStatus()).to.equal(200);
+    expect(res.getBody().htmlContent).to.exist;
+    expect(res.getBody().templateType).to.equal("bookingConfirmation");
+    expect(res.getBody().htmlContent).to.include("BookingTestUser");
+    expect(res.getBody().htmlContent).to.include("Booking Bekræftelse");
+  });
+  
+  test("Should contain booking details", function() {
+    expect(res.getBody().htmlContent).to.include("Test Hotel");
+    expect(res.getBody().htmlContent).to.include("#101");
+    expect(res.getBody().htmlContent).to.include("2025-02-01");
+    expect(res.getBody().htmlContent).to.include("2025-02-03");
+    expect(res.getBody().htmlContent).to.include("2 gæster");
+  });
+  
+  test("Should contain price information", function() {
+    expect(res.getBody().htmlContent).to.include("1500");
+    expect(res.getBody().htmlContent).to.include("test-booking-123");
+  });
+}
+
+// Test template med special characters
+post {
+  name: Test Template with Special Characters
+  url: {{baseUrl}}/api/users/test-email-template
+  headers {
+    Content-Type: application/json
+    Authorization: Bearer {{adminToken}}
+  }
+  body:json {
+    {
+      "templateType": "welcome",
+      "testData": {
+        "username": "Test User with Special Chars!@#$%^&*()",
+        "role": "Admin"
+      }
+    }
+  }
+}
+
+tests {
+  test("Should handle special characters in template", function() {
+    expect(res.getStatus()).to.equal(200);
+    expect(res.getBody().htmlContent).to.include("Test User with Special Chars!@#$%^&*()");
+  });
+}
+
+// Test template med danske karakterer
+post {
+  name: Test Template with Danish Characters
+  url: {{baseUrl}}/api/users/test-email-template
+  headers {
+    Content-Type: application/json
+    Authorization: Bearer {{adminToken}}
+  }
+  body:json {
+    {
+      "templateType": "bookingConfirmation",
+      "testData": {
+        "username": "Test Bruger med ÆØÅ",
+        "roomNumber": "101",
+        "hotelName": "Test Hotel med ÆØÅ",
+        "startDate": "2025-02-01",
+        "endDate": "2025-02-03",
+        "numberOfGuests": 2,
+        "totalPrice": 1500.00,
+        "bookingId": "test-booking-æøå"
+      }
+    }
+  }
+}
+
+tests {
+  test("Should handle Danish characters in template", function() {
+    expect(res.getStatus()).to.equal(200);
+    expect(res.getBody().htmlContent).to.include("Test Bruger med ÆØÅ");
+    expect(res.getBody().htmlContent).to.include("Test Hotel med ÆØÅ");
+    expect(res.getBody().htmlContent).to.include("test-booking-æøå");
+  });
+}
+
+// Test template med lange tekst
+post {
+  name: Test Template with Long Text
+  url: {{baseUrl}}/api/users/test-email-template
+  headers {
+    Content-Type: application/json
+    Authorization: Bearer {{adminToken}}
+  }
+  body:json {
+    {
+      "templateType": "bookingConfirmation",
+      "testData": {
+        "username": "Very Long Username That Should Test Template Rendering",
+        "roomNumber": "999",
+        "hotelName": "Very Long Hotel Name That Should Test HTML Rendering and Layout",
+        "startDate": "2025-02-01",
+        "endDate": "2025-02-10",
+        "numberOfGuests": 10,
+        "totalPrice": 15000.00,
+        "bookingId": "very-long-booking-id-that-should-test-template-rendering"
+      }
+    }
+  }
+}
+
+tests {
+  test("Should handle long text in template", function() {
+    expect(res.getStatus()).to.equal(200);
+    expect(res.getBody().htmlContent).to.include("Very Long Username That Should Test Template Rendering");
+    expect(res.getBody().htmlContent).to.include("Very Long Hotel Name That Should Test HTML Rendering and Layout");
+  });
+}
+
+// Test template med edge case data
+post {
+  name: Test Template with Edge Case Data
+  url: {{baseUrl}}/api/users/test-email-template
+  headers {
+    Content-Type: application/json
+    Authorization: Bearer {{adminToken}}
+  }
+  body:json {
+    {
+      "templateType": "bookingConfirmation",
+      "testData": {
+        "username": "",
+        "roomNumber": "0",
+        "hotelName": "",
+        "startDate": "2025-01-01",
+        "endDate": "2025-01-01",
+        "numberOfGuests": 0,
+        "totalPrice": 0.00,
+        "bookingId": ""
+      }
+    }
+  }
+}
+
+tests {
+  test("Should handle edge case data in template", function() {
+    expect(res.getStatus()).to.equal(200);
+    expect(res.getBody().htmlContent).to.exist;
+    expect(res.getBody().htmlContent).to.include("0 nætter");
+    expect(res.getBody().htmlContent).to.include("0 gæster");
+  });
+}
+
+// Test template med HTML injection
+post {
+  name: Test Template with HTML Injection
+  url: {{baseUrl}}/api/users/test-email-template
+  headers {
+    Content-Type: application/json
+    Authorization: Bearer {{adminToken}}
+  }
+  body:json {
+    {
+      "templateType": "welcome",
+      "testData": {
+        "username": "<script>alert('XSS')</script>TestUser",
+        "role": "User"
+      }
+    }
+  }
+}
+
+tests {
+  test("Should escape HTML injection in template", function() {
+    expect(res.getStatus()).to.equal(200);
+    expect(res.getBody().htmlContent).to.include("&lt;script&gt;alert('XSS')&lt;/script&gt;TestUser");
+    expect(res.getBody().htmlContent).to.not.include("<script>alert('XSS')</script>");
+  });
+}

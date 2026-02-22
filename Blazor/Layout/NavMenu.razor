@@ -1,0 +1,202 @@
+﻿@using Blazor.Services
+@inject AuthenticationService AuthService
+@implements IDisposable
+
+<div class="top-row ps-3 navbar navbar-dark">
+    <div class="container-fluid">
+        <a class="navbar-brand" href="">🏖️ VacationStay</a>
+        
+        <!-- User info in top bar -->
+        @if (isAuthenticated && currentUser != null)
+        {
+            <div class="navbar-text text-white me-3">
+                <span class="me-2"><i class="bi bi-person-circle"></i> @currentUser.Username</span>
+                <span class="badge @GetRoleBadgeClass(currentUser.Role)">@currentUser.Role</span>
+            </div>
+        }
+        
+        <button title="Navigation menu" class="navbar-toggler" @onclick="ToggleNavMenu">
+            <span class="navbar-toggler-icon"></span>
+        </button>
+    </div>
+</div>
+
+<div class="@NavMenuCssClass nav-scrollable" @onclick="ToggleNavMenu">
+    <nav class="nav flex-column">
+        <div class="nav-item px-3">
+            <NavLink class="nav-link" href="" Match="NavLinkMatch.All">
+                <i class="bi bi-house-door-fill" aria-hidden="true"></i> Home
+            </NavLink>
+        </div>
+
+        <div class="nav-item px-3">
+            <NavLink class="nav-link" href="rooms">
+                <i class="bi bi-geo-alt-fill" aria-hidden="true"></i> Find feriested
+            </NavLink>
+        </div>
+
+        <!-- Booking related links -->
+        @if (isAuthenticated)
+        {
+            <div class="nav-item px-3">
+                <NavLink class="nav-link" href="my-bookings">
+                    <i class="bi bi-calendar-check" aria-hidden="true"></i> Mine Bookinger
+                </NavLink>
+            </div>
+        }
+
+        <div class="nav-item px-3">
+            <NavLink class="nav-link" href="icon-test">
+                <i class="bi bi-check2-circle" aria-hidden="true"></i> Icon Test
+            </NavLink>
+        </div>
+
+        <div class="nav-item px-3">
+            <NavLink class="nav-link" href="ticket-demo">
+                <i class="bi bi-chat-dots" aria-hidden="true"></i> Ticket Demo
+            </NavLink>
+        </div>
+
+        <!-- Authentication related links -->
+        @if (isAuthenticated)
+        {
+            <div class="nav-item px-3">
+                <NavLink class="nav-link" href="profile">
+                    <i class="bi bi-person-circle" aria-hidden="true"></i> Min Profil
+                </NavLink>
+            </div>
+            
+            @if (currentUser?.Role == "Admin")
+            {
+                <hr class="nav-divider" />
+                <div class="nav-item px-3">
+                    <div class="nav-link text-muted small">
+                        <i class="bi bi-shield-check" aria-hidden="true"></i> Administrator
+                    </div>
+                </div>
+                <div class="nav-item px-3">
+                    <NavLink class="nav-link" href="admin/users">
+                        <i class="bi bi-people" aria-hidden="true"></i> Administrer Brugere
+                    </NavLink>
+                </div>
+                <div class="nav-item px-3">
+                    <NavLink class="nav-link" href="bruno-tests">
+                        <i class="bi bi-bug" aria-hidden="true"></i> Bruno Test Resultater
+                    </NavLink>
+                </div>
+            }
+            
+            <hr class="nav-divider" />
+            <div class="nav-item px-3">
+                <button class="nav-link btn btn-link text-start w-100 p-0" @onclick="HandleLogout" disabled="@isLoggingOut">
+                    @if (isLoggingOut)
+                    {
+                        <span class="spinner-border spinner-border-sm me-2" role="status" aria-hidden="true"></span>
+                    }
+                    else
+                    {
+                        <i class="bi bi-box-arrow-right" aria-hidden="true"></i>
+                    }
+                    Log ud
+                </button>
+            </div>
+        }
+        else
+        {
+            <div class="nav-item px-3">
+                <NavLink class="nav-link" href="login">
+                    <i class="bi bi-box-arrow-in-right" aria-hidden="true"></i> Log ind
+                </NavLink>
+            </div>
+        }
+        
+    </nav>
+</div>
+
+@code {
+    private bool collapseNavMenu = true;
+    private bool isAuthenticated = false;
+    private bool isLoggingOut = false;
+    private AuthUserInfo? currentUser;
+
+    private string? NavMenuCssClass => collapseNavMenu ? "collapse" : null;
+
+    protected override async Task OnInitializedAsync()
+    {
+        await CheckAuthenticationStatus();
+        
+        // Subscribe to authentication state changes
+        AuthService.AuthenticationStateChanged += OnAuthenticationStateChanged;
+    }
+
+    private async Task CheckAuthenticationStatus()
+    {
+        isAuthenticated = await AuthService.IsAuthenticatedAsync();
+        if (isAuthenticated)
+        {
+            currentUser = await AuthService.GetCurrentUserAsync();
+        }
+        else
+        {
+            currentUser = null;
+        }
+        StateHasChanged();
+    }
+
+    private async Task HandleLogout()
+    {
+        isLoggingOut = true;
+        StateHasChanged();
+
+        try
+        {
+            await AuthService.LogoutAsync();
+            // Authentication state change event will handle UI updates
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine($"Logout fejl: {ex.Message}");
+        }
+        finally
+        {
+            isLoggingOut = false;
+            StateHasChanged();
+        }
+    }
+
+    private async void OnAuthenticationStateChanged(object? sender, bool authenticated)
+    {
+        isAuthenticated = authenticated;
+        if (authenticated)
+        {
+            currentUser = await AuthService.GetCurrentUserAsync();
+        }
+        else
+        {
+            currentUser = null;
+        }
+        
+        await InvokeAsync(StateHasChanged);
+    }
+
+    private void ToggleNavMenu()
+    {
+        collapseNavMenu = !collapseNavMenu;
+    }
+
+    private string GetRoleBadgeClass(string role)
+    {
+        return role.ToLower() switch
+        {
+            "admin" => "bg-danger",
+            "user" => "bg-primary", 
+            "manager" => "bg-warning text-dark",
+            _ => "bg-secondary"
+        };
+    }
+
+    public void Dispose()
+    {
+        AuthService.AuthenticationStateChanged -= OnAuthenticationStateChanged;
+    }
+}

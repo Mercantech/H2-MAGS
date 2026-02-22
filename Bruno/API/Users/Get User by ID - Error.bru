@@ -1,0 +1,41 @@
+meta {
+  name: Get User by ID - Error
+  type: http
+  seq: 15
+}
+
+get {
+  url: {{baseUrl}}/api/Users/{{invalidUserId}}
+  body: none
+  auth: none
+}
+
+headers {
+  Authorization: Bearer {{JWT-Admin}}
+}
+
+tests {
+  // Test fejlhåndtering ved hentning af bruger
+  
+  // Test response status (404 Not Found)
+  test("Fejlhåndtering returnerer korrekt status", function() {
+    expect(res.status).to.be.equal(404);
+  });
+  
+  // Test response tid
+  test("Fejlhåndtering er hurtig (under 2 sekunder)", function() {
+    expect(res.responseTime).to.be.lessThan(2000);
+  });
+  
+  // Test autorisation
+  test("Request har korrekt Authorization header", function() {
+    const authHeader = req.getHeader("Authorization");
+    expect(authHeader).to.include("Bearer ");
+    expect(authHeader).to.have.length.greaterThan(10);
+  });
+}
+
+docs {
+  name: Get User by ID - Error
+  description: Tester fejlhåndtering ved hentning af bruger med ugyldigt ID
+}

@@ -1,0 +1,329 @@
+@using Blazor.Services
+@using Blazor.Models
+@inject TicketSignalRService SignalRService
+@inject IJSRuntime JSRuntime
+@inject ILogger<TicketChat> Logger
+
+<div class="ticket-chat-container">
+    <div class="chat-header">
+        <h4>Ticket Chat - @TicketNumber</h4>
+        <div class="connection-status">
+            @if (SignalRService.IsConnected)
+            {
+                <span class="status-connected">🟢 Forbundet</span>
+            }
+            else
+            {
+                <span class="status-disconnected">🔴 Ikke forbundet</span>
+            }
+        </div>
+    </div>
+
+    <div class="chat-messages" @ref="messagesContainer">
+        @foreach (var message in Messages)
+        {
+            <div class="message @(message.IsFromCurrentUser ? "own-message" : "other-message")">
+                <div class="message-header">
+                    <strong>@message.AuthorName</strong>
+                    <span class="message-time">@message.Timestamp.ToString("HH:mm")</span>
+                    @if (message.IsInternal)
+                    {
+                        <span class="internal-badge">Intern</span>
+                    }
+                </div>
+                <div class="message-content">@message.Message</div>
+            </div>
+        }
+        
+        @if (TypingUsers.Any())
+        {
+            <div class="typing-indicator">
+                @foreach (var user in TypingUsers)
+                {
+                    <span class="typing-user">@user skriver...</span>
+                }
+            </div>
+        }
+    </div>
+
+    <div class="chat-input">
+        <div class="input-group">
+            <input type="text" 
+                   @bind="newMessage" 
+                   @onkeypress="OnKeyPress"
+                   @oninput="OnInput"
+                   placeholder="Skriv din besked her..."
+                   class="form-control"
+                   disabled="@(!SignalRService.IsConnected)" />
+            <button class="btn btn-primary" 
+                    @onclick="SendMessage" 
+                    disabled="@(string.IsNullOrEmpty(newMessage) || !SignalRService.IsConnected)">
+                Send
+            </button>
+        </div>
+        @if (CanSendInternalMessages)
+        {
+            <div class="form-check mt-2">
+                <input type="checkbox" @bind="isInternalMessage" class="form-check-input" id="internalMessage" />
+                <label class="form-check-label" for="internalMessage">
+                    Intern besked (kun synlig for staff)
+                </label>
+            </div>
+        }
+    </div>
+</div>
+
+@code {
+    [Parameter] public string TicketId { get; set; } = string.Empty;
+    [Parameter] public string TicketNumber { get; set; } = string.Empty;
+    [Parameter] public string UserId { get; set; } = string.Empty;
+    [Parameter] public string Username { get; set; } = string.Empty;
+    [Parameter] public string UserRole { get; set; } = string.Empty;
+    [Parameter] public bool CanSendInternalMessages { get; set; } = false;
+
+    private List<ChatMessage> Messages { get; set; } = new();
+    private List<string> TypingUsers { get; set; } = new();
+    private string newMessage = string.Empty;
+    private bool isInternalMessage = false;
+    private ElementReference messagesContainer;
+    private Timer? typingTimer;
+
+    protected override async Task OnInitializedAsync()
+    {
+        // Registrer event handlers
+        SignalRService.MessageReceived += OnMessageReceived;
+        SignalRService.UserJoined += OnUserJoined;
+        SignalRService.UserLeft += OnUserLeft;
+        SignalRService.TypingIndicator += OnTypingIndicator;
+        SignalRService.Error += OnError;
+        SignalRService.Connected += OnConnected;
+
+        // Tilslut til ticket chat
+        await SignalRService.JoinTicketAsync(TicketId, UserId, Username, UserRole);
+    }
+
+    protected override async Task OnAfterRenderAsync(bool firstRender)
+    {
+        if (firstRender)
+        {
+            await ScrollToBottom();
+        }
+    }
+
+    private async Task SendMessage()
+    {
+        if (string.IsNullOrEmpty(newMessage) || !SignalRService.IsConnected)
+            return;
+
+        await SignalRService.SendMessageAsync(newMessage, isInternalMessage);
+        newMessage = string.Empty;
+        isInternalMessage = false;
+    }
+
+    private async Task OnKeyPress(KeyboardEventArgs e)
+    {
+        if (e.Key == "Enter" && !e.ShiftKey)
+        {
+            await SendMessage();
+        }
+    }
+
+    private async Task OnInput(ChangeEventArgs e)
+    {
+        // Send typing indicator
+        await SignalRService.SendTypingIndicatorAsync(true);
+
+        // Reset typing timer
+        typingTimer?.Dispose();
+        typingTimer = new Timer(async _ =>
+        {
+            await SignalRService.SendTypingIndicatorAsync(false);
+        }, null, 2000, Timeout.Infinite);
+    }
+
+    private async Task OnMessageReceived(string id, string ticketId, string message, bool isInternal, DateTime timestamp)
+    {
+        if (ticketId != TicketId) return;
+
+        var chatMessage = new ChatMessage
+        {
+            Id = id,
+            AuthorName = "Demo User", // This should be set by the server
+            Message = message,
+            IsInternal = isInternal,
+            Timestamp = timestamp,
+            IsFromCurrentUser = false // This should be determined by comparing with current user
+        };
+
+        Messages.Add(chatMessage);
+        await InvokeAsync(StateHasChanged);
+        await ScrollToBottom();
+    }
+
+    private async Task OnUserJoined(string username, string userId, DateTime timestamp)
+    {
+        Logger.LogInformation("Bruger {Username} tilsluttede til chat", username);
+        await InvokeAsync(StateHasChanged);
+    }
+
+    private async Task OnUserLeft(string username, string userId, DateTime timestamp)
+    {
+        Logger.LogInformation("Bruger {Username} forlod chat", username);
+        await InvokeAsync(StateHasChanged);
+    }
+
+    private async Task OnTypingIndicator(string username, bool isTyping, DateTime timestamp)
+    {
+        if (username == Username) return; // Don't show own typing indicator
+
+        if (isTyping)
+        {
+            if (!TypingUsers.Contains(username))
+            {
+                TypingUsers.Add(username);
+            }
+        }
+        else
+        {
+            TypingUsers.Remove(username);
+        }
+
+        await InvokeAsync(StateHasChanged);
+    }
+
+    private async Task OnError(string message)
+    {
+        Logger.LogError("SignalR fejl: {Message}", message);
+        await InvokeAsync(StateHasChanged);
+    }
+
+    private async Task OnConnected(string message)
+    {
+        Logger.LogInformation("SignalR forbundet: {Message}", message);
+        await InvokeAsync(StateHasChanged);
+    }
+
+    private async Task ScrollToBottom()
+    {
+        await JSRuntime.InvokeVoidAsync("scrollToBottom", messagesContainer);
+    }
+
+    public async ValueTask DisposeAsync()
+    {
+        // Cleanup event handlers
+        SignalRService.MessageReceived -= OnMessageReceived;
+        SignalRService.UserJoined -= OnUserJoined;
+        SignalRService.UserLeft -= OnUserLeft;
+        SignalRService.TypingIndicator -= OnTypingIndicator;
+        SignalRService.Error -= OnError;
+        SignalRService.Connected -= OnConnected;
+
+        // Forlad ticket chat
+        await SignalRService.LeaveTicketAsync();
+
+        typingTimer?.Dispose();
+    }
+}
+
+<style>
+    .ticket-chat-container {
+        display: flex;
+        flex-direction: column;
+        height: 500px;
+        border: 1px solid #ddd;
+        border-radius: 8px;
+        overflow: hidden;
+    }
+
+    .chat-header {
+        background-color: #f8f9fa;
+        padding: 1rem;
+        border-bottom: 1px solid #ddd;
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+    }
+
+    .connection-status {
+        font-size: 0.9rem;
+    }
+
+    .status-connected {
+        color: #28a745;
+    }
+
+    .status-disconnected {
+        color: #dc3545;
+    }
+
+    .chat-messages {
+        flex: 1;
+        overflow-y: auto;
+        padding: 1rem;
+        background-color: #fff;
+    }
+
+    .message {
+        margin-bottom: 1rem;
+        padding: 0.5rem;
+        border-radius: 8px;
+        max-width: 80%;
+    }
+
+    .own-message {
+        background-color: #007bff;
+        color: white;
+        margin-left: auto;
+    }
+
+    .other-message {
+        background-color: #f8f9fa;
+        color: #333;
+    }
+
+    .message-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        margin-bottom: 0.25rem;
+        font-size: 0.8rem;
+        opacity: 0.8;
+    }
+
+    .internal-badge {
+        background-color: #ffc107;
+        color: #000;
+        padding: 0.1rem 0.3rem;
+        border-radius: 3px;
+        font-size: 0.7rem;
+    }
+
+    .message-content {
+        word-wrap: break-word;
+    }
+
+    .typing-indicator {
+        font-style: italic;
+        color: #666;
+        font-size: 0.9rem;
+    }
+
+    .typing-user {
+        margin-right: 0.5rem;
+    }
+
+    .chat-input {
+        padding: 1rem;
+        background-color: #f8f9fa;
+        border-top: 1px solid #ddd;
+    }
+
+    .input-group {
+        display: flex;
+        gap: 0.5rem;
+    }
+
+    .input-group input {
+        flex: 1;
+    }
+</style>

@@ -1,162 +1,202 @@
-using System.Text;
-using API.DBContext;
-using API.Services.Mapping.Users;
-using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.EntityFrameworkCore;
-using Microsoft.IdentityModel.Tokens;
 using Microsoft.OpenApi.Models;
+using Scalar.AspNetCore;
+using System;
+using System.Reflection;
+using API.Data;
+using API.Services;
+using API.Hubs;
+using Microsoft.AspNetCore.Authentication.JwtBearer;
+using Microsoft.IdentityModel.Tokens;
+using System.Text;
 
-var builder = WebApplication.CreateBuilder(args);
+namespace API;
 
-// Add services to the container.
-
-builder.Services.AddControllers();
-
-// Tilfj CORS-politik
-builder.Services.AddCors(options =>
+public class Program
 {
-    options.AddPolicy(
-        "AllowAll",
-        policy =>
-            policy
-                .AllowAnyOrigin()
-                .AllowAnyHeader()
-                .AllowAnyMethod()
-    );
-});
-
-IConfiguration Configuration = builder.Configuration;
-
-string connectionString;
-try
-{
-    Console.WriteLine("Prøver at åbne DefaultConnection til Mercantecs Datacenter...");
-    var defaultConnection = Configuration.GetConnectionString("DefaultConnection");
-    using var connection = new Npgsql.NpgsqlConnection(defaultConnection);
-    connection.Open();
-    connectionString = defaultConnection;
-    connection.Close();
-}
-catch
-{
-    Console.WriteLine("Fejl ved at åbne DefaultConnection. Prøver NeonConnection...");
-    connectionString = Configuration.GetConnectionString("NeonConnection");
-}
-
-builder.Services.AddDbContext<HotelContext>(options => options.UseNpgsql(connectionString));
-
-// API.Services
-builder.Services.AddScoped<SignupService>();
-builder.Services.AddScoped<JWTService>();
-
-// Bind ActiveDirectorySettings fra appsettings.json
-builder.Services.Configure<ActiveDirectorySettings>(
-    builder.Configuration.GetSection("ActiveDirectory")
-);
-
-// Registrer ActiveDirectoryService som en singleton eller scoped tjeneste
-builder.Services.AddScoped<ActiveDirectoryService>();
-
-// Tilføj EmailService
-builder.Services.AddScoped<EmailService>();
-
-// Log Google Authentication configuration
-var googleClientId = builder.Configuration["Authentication:Google:ClientId"];
-var googleClientSecret = builder.Configuration["Authentication:Google:ClientSecret"];
-
-if (string.IsNullOrEmpty(googleClientId) || string.IsNullOrEmpty(googleClientSecret))
-{
-    Console.WriteLine("Google Authentication is not configured correctly.");
-    Console.WriteLine("Please check the 'Authentication:Google:ClientId' and 'Authentication:Google:ClientSecret' values in appsettings.json.");
-}
-else
-{
-    Console.WriteLine("Google Authentication is configured:");
-    Console.WriteLine($"ClientId: {googleClientId}");
-    Console.WriteLine($"ClientSecret: {new string('*', googleClientSecret.Length)}");
-}
-
-// Configure JWT Authentication
-builder
-    .Services.AddAuthentication(options =>
+    public static void Main(string[] args)
     {
-        options.DefaultAuthenticateScheme = JwtBearerDefaults.AuthenticationScheme;
-        options.DefaultChallengeScheme = JwtBearerDefaults.AuthenticationScheme;
-    })
-    .AddJwtBearer(options =>
-    {
-        options.TokenValidationParameters = new TokenValidationParameters
-        {
-            ValidateIssuer = true,
-            ValidIssuer = "accounts.google.com",
-            ValidateAudience = true,
-            ValidAudience = Configuration["Authentication:Google:ClientId"],
-            ValidateLifetime = true
-        };
-    })
-    .AddGoogle(options =>
-    {
-        options.ClientId = Configuration["Authentication:Google:ClientId"];
-        options.ClientSecret = Configuration["Authentication:Google:ClientSecret"];
-    });
+        var builder = WebApplication.CreateBuilder(args);
 
-builder.Services.AddEndpointsApiExplorer();
-builder.Services.AddSwaggerGen(c =>
-{
-    c.SwaggerDoc("v1", new OpenApiInfo { Title = "Hotel API", Version = "v1" });
+        IConfiguration Configuration = builder.Configuration;
 
-    // Opdateret security definition
-    c.AddSecurityDefinition(
-        "Bearer",
-        new OpenApiSecurityScheme
-        {
-            Description = "JWT Authorization header using the Bearer scheme.\r\n\r\n",
-            Name = "Authorization",
-            In = ParameterLocation.Header,
-            Type = SecuritySchemeType.Http,
-            Scheme = "Bearer",
-            BearerFormat = "JWT"
-        }
-    );
+        string connectionString = Configuration.GetConnectionString("DefaultConnection")
+        ?? Environment.GetEnvironmentVariable("DEFAULT_CONNECTION") ?? "";
 
-    c.AddSecurityRequirement(
-        new OpenApiSecurityRequirement
+        builder.Services.AddDbContext<AppDBContext>(options =>
+                options.UseNpgsql(connectionString));
+
+        // Registrer JWT Service
+        builder.Services.AddScoped<JwtService>();
+        
+        // Registrer Login Attempt Service
+        builder.Services.AddScoped<LoginAttemptService>();
+        
+        // Registrer Data Seeder Service
+        builder.Services.AddScoped<DataSeederService>();
+        
+        // Registrer Active Directory Service
+        builder.Services.AddScoped<ActiveDirectoryService>();
+        
+        // Registrer Mail Service
+        builder.Services.AddScoped<MailService>();
+        
+        // Registrer Ticket Service
+        builder.Services.AddScoped<TicketService>();
+        
+        // Registrer Password Hashing Service (Argon2id)
+        builder.Services.AddScoped<PasswordHashingService>();
+
+        // Konfigurer JWT Authentication
+        var jwtSecretKey = Configuration["Jwt:SecretKey"] ?? Environment.GetEnvironmentVariable("JWT_SECRET_KEY");
+        var jwtIssuer = Configuration["Jwt:Issuer"] ?? Environment.GetEnvironmentVariable("JWT_ISSUER");
+        var jwtAudience = Configuration["Jwt:Audience"] ?? Environment.GetEnvironmentVariable("JWT_AUDIENCE");
+
+        builder.Services.AddAuthentication(options =>
         {
+            options.DefaultAuthenticateScheme = JwtBearerDefaults.AuthenticationScheme;
+            options.DefaultChallengeScheme = JwtBearerDefaults.AuthenticationScheme;
+        })
+        .AddJwtBearer(options =>
+        {
+            options.TokenValidationParameters = new TokenValidationParameters
             {
-                new OpenApiSecurityScheme
-                {
-                    Reference = new OpenApiReference
-                    {
-                        Type = ReferenceType.SecurityScheme,
-                        Id = "Bearer"
-                    }
-                },
-                new string[] { }
+                ValidateIssuerSigningKey = true,
+                IssuerSigningKey = new SymmetricSecurityKey(Encoding.ASCII.GetBytes(jwtSecretKey ?? "")),
+                ValidateIssuer = true,
+                ValidIssuer = jwtIssuer,
+                ValidateAudience = true,
+                ValidAudience = jwtAudience,
+                ValidateLifetime = true,
+                ClockSkew = TimeSpan.Zero
+            };
+        });
+
+        builder.Services.AddAuthorization();
+
+        // Add services to the container.
+        builder.Services.AddControllers();
+        
+        // Add SignalR med CORS support
+        builder.Services.AddSignalR(options =>
+        {
+            options.EnableDetailedErrors = true;
+        });
+        
+        // Add Memory Cache for login attempt tracking
+        builder.Services.AddMemoryCache();
+
+        // Learn more about configuring OpenAPI at https://aka.ms/aspnet/openapi
+        builder.Services.AddSwaggerGen(c =>
+        {
+            var xmlFile = $"{Assembly.GetExecutingAssembly().GetName().Name}.xml";
+            var xmlPath = Path.Combine(AppContext.BaseDirectory, xmlFile);
+            if (File.Exists(xmlPath))
+            {
+                c.IncludeXmlComments(xmlPath);
             }
-        }
-    );
 
-    // Tilføj dette for at inkludere XML-dokumentation
-    var xmlFile = $"{System.Reflection.Assembly.GetExecutingAssembly().GetName().Name}.xml";
-    var xmlPath = Path.Combine(AppContext.BaseDirectory, xmlFile);
-    c.IncludeXmlComments(xmlPath);
-});
+            // Tilføj JWT Bearer support til Swagger
+            c.AddSecurityDefinition("Bearer", new OpenApiSecurityScheme
+            {
+                Description = "JWT Authorization header using the Bearer scheme. Enter 'Bearer' [space] and then your token in the text input below.",
+                Name = "Authorization",
+                In = ParameterLocation.Header,
+                Type = SecuritySchemeType.ApiKey,
+                Scheme = "Bearer"
+            });
 
-var app = builder.Build();
+            c.AddSecurityRequirement(new OpenApiSecurityRequirement()
+            {
+                {
+                    new OpenApiSecurityScheme
+                    {
+                        Reference = new OpenApiReference
+                        {
+                            Type = ReferenceType.SecurityScheme,
+                            Id = "Bearer"
+                        },
+                        Scheme = "oauth2",
+                        Name = "Bearer",
+                        In = ParameterLocation.Header,
+                    },
+                    new List<string>()
+                }
+            });
+        });
 
-// Configure the HTTP request pipeline.
-app.UseSwagger();
-app.UseSwaggerUI();
+        // Tilføj CORS for specifikke Blazor WASM domæner
+        builder.Services.AddCors(options =>
+        {
+            options.AddPolicy(
+                "AllowSpecificOrigins",
+                builder =>
+                {
+                    builder
+                        .WithOrigins(
+                            "http://localhost:5085",
+                            "http://localhost:8052",
+                            "https://localhost:7285",
+                            "https://h2.mercantec.tech",
+                            "http://localhost:5173",
+                            "https://h2-mags-admin.mercantec.tech"
+                        )
+                        .AllowAnyMethod()
+                        .AllowAnyHeader()
+                        .WithExposedHeaders("Content-Disposition")
+                        .AllowCredentials(); // Nødvendigt for SignalR
+                }
+            );
+        });
 
-app.UseHttpsRedirection();
+        // Tilføj basic health checks
+        builder.Services.AddHealthChecks()
+            .AddCheck("self", () => Microsoft.Extensions.Diagnostics.HealthChecks.HealthCheckResult.Healthy(), new[] { "live" });
 
-// Anvend CORS-politikken
-app.UseCors("AllowAll");
+        var app = builder.Build();
 
-app.UseAuthentication();
+        // Brug CORS - skal være før anden middleware
+        app.UseCors("AllowSpecificOrigins");
 
-app.UseAuthorization();
+        // Map health checks
+        app.MapHealthChecks("/health");
+        app.MapHealthChecks("/alive", new Microsoft.AspNetCore.Diagnostics.HealthChecks.HealthCheckOptions
+        {
+            Predicate = r => r.Tags.Contains("live")
+        });
 
-app.MapControllers();
+        // Test CORS endpoint
+        app.MapGet("/test-cors", () => "CORS working!").RequireCors("AllowSpecificOrigins");
 
-app.Run();
+        app.MapOpenApi();
+
+        // Scalar Middleware for OpenAPI
+        app.MapScalarApiReference(options =>
+        {
+            options
+                .WithTitle("MAGSLearn")
+                .WithTheme(ScalarTheme.Mars)
+                .WithDefaultHttpClient(ScalarTarget.CSharp, ScalarClient.HttpClient);
+        });
+
+        // Map the Swagger UI
+        app.UseSwagger();
+        app.UseSwaggerUI(options =>
+        {
+            options.SwaggerEndpoint("/swagger/v1/swagger.json", "API v1");
+        });
+
+        app.UseAuthentication();
+        app.UseAuthorization();
+
+        app.MapControllers();
+        
+        // Map SignalR Hub with CORS support
+        app.MapHub<TicketHub>("/tickethub")
+            .RequireCors("AllowSpecificOrigins");
+
+        // Set default port if not specified
+        var port = Environment.GetEnvironmentVariable("ASPNETCORE_URLS")?.Split(':').LastOrDefault() ?? "8045";
+        app.Run($"http://+:{port}");
+    }
+}

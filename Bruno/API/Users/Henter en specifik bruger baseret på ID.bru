@@ -1,0 +1,30 @@
+meta {
+  name: Henter en specifik bruger baseret på ID.
+  type: http
+  seq: 4
+}
+
+get {
+  url: {{baseUrl}}/api/Users/:id
+  body: none
+  auth: bearer
+}
+
+params:path {
+  id: {{user-id}}
+}
+
+headers {
+  Authorization: {{apiKey}}
+}
+
+auth:bearer {
+  token: {{JWT-Admin}}
+}
+
+tests {
+  // Test response status
+  test("User login returnerer 200 OK", function() {
+    expect(res.status).to.equal(200);
+  });
+}

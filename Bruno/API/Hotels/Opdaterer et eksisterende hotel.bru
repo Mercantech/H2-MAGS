@@ -1,0 +1,34 @@
+meta {
+  name: Opdaterer et eksisterende hotel.
+  type: http
+  seq: 3
+}
+
+put {
+  url: {{baseUrl}}/api/Hotels/:id
+  body: json
+  auth: none
+}
+
+params:path {
+  id: {{hotel-id}}
+}
+
+headers {
+  Authorization: {{apiKey}}
+}
+
+body:json {
+  {
+    "id": "{{hotel-id}}",
+    "name": "Dummy Hotel - Edit",
+    "address": "Dummy Street - Edit"
+  }
+}
+
+tests {
+  // Test status kode
+  test("Status kode skal være 204 No Content", function() {
+    expect(res.status).to.equal(204);
+  });
+}

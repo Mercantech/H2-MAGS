@@ -1,0 +1,369 @@
+@using DomainModels
+@using Blazor.Services
+@inject APIService ApiService
+@inject AuthenticationService AuthService
+@inject NavigationManager Navigation
+
+<div class="card vacation-search-card shadow-sm mt-4">
+    <div class="card-body">
+        <h5 class="card-title vacation-search-title">
+            <i class="bi bi-geo-alt-fill text-primary me-2"></i>🏖️ Find dit drømmeferiested
+        </h5>
+
+        <EditForm Model="@searchQuery" OnValidSubmit="@HandleSearch">
+            <DataAnnotationsValidator />
+            <ValidationSummary class="text-danger" />
+
+            <div class="row">
+                <!-- Hotel Selection -->
+                <div class="col-md-6 mb-3">
+                    <label class="form-label">🏨 Vælg destination</label>
+                    <select @bind="searchQuery.HotelId" class="form-select" required>
+                        <option value="">Vælg hotel</option>
+                        @if (hotels != null)
+                        {
+                            @foreach (var hotel in hotels)
+                            {
+                                <option value="@hotel.Id">@hotel.Name</option>
+                            }
+                        }
+                    </select>
+                </div>
+
+                <!-- Number of Guests -->
+                <div class="col-md-6 mb-3">
+                    <label class="form-label">👥 Antal rejsende</label>
+                    <input type="number" @bind="searchQuery.NumberOfGuests" class="form-control" min="1" max="10" required />
+                </div>
+            </div>
+
+            <div class="row">
+                <!-- Check-in Date -->
+                <div class="col-md-6 mb-3">
+                    <label class="form-label">📅 Ankomst dato</label>
+                    <input type="date" @bind="searchQuery.CheckInDate" class="form-control" required />
+                </div>
+
+                <!-- Check-out Date -->
+                <div class="col-md-6 mb-3">
+                    <label class="form-label">🛫 Afrejse dato</label>
+                    <input type="date" @bind="searchQuery.CheckOutDate" class="form-control" required />
+                </div>
+            </div>
+
+            <!-- Advanced Options Toggle -->
+            <div class="mb-3">
+                <button type="button" class="btn btn-outline-secondary btn-sm" @onclick="ToggleAdvancedOptions">
+                    <i class="bi bi-gear"></i> 
+                    @(showAdvancedOptions ? "Skjul" : "Vis") avancerede muligheder
+                </button>
+            </div>
+
+            <!-- Advanced Options -->
+            @if (showAdvancedOptions)
+            {
+                <div class="border rounded p-3 mb-3 bg-light">
+                    <h6 class="text-secondary mb-3">Avancerede muligheder</h6>
+                    
+                    <div class="row">
+                        <div class="col-md-4 mb-3">
+                            <label class="form-label">Rumtype</label>
+                            <input type="text" @bind="searchQuery.RoomType" class="form-control" placeholder="f.eks. Suite, Double" />
+                        </div>
+
+                        <div class="col-md-4 mb-3">
+                            <label class="form-label">Min. antal senge</label>
+                            <input type="number" @bind="searchQuery.MinimumBeds" class="form-control" min="1" max="5" />
+                        </div>
+
+                        <div class="col-md-4 mb-3">
+                            <label class="form-label">Max. pris per nat</label>
+                            <input type="number" @bind="searchQuery.MaxPricePerNight" class="form-control" min="0" step="0.01" />
+                        </div>
+                    </div>
+
+                    <div class="row">
+                        <div class="col-md-4 mb-3">
+                            <label class="form-label">Foretrukken etage</label>
+                            <input type="number" @bind="searchQuery.PreferredFloor" class="form-control" min="1" max="50" />
+                        </div>
+
+                        <div class="col-md-4 mb-3">
+                            <label class="form-label">Min. kvadratmeter</label>
+                            <input type="number" @bind="searchQuery.MinimumSquareMeters" class="form-control" min="10" max="200" />
+                        </div>
+                    </div>
+
+                    <div class="row">
+                        <div class="col-12">
+                            <h6 class="text-secondary mb-2">Faciliteter</h6>
+                            <div class="row">
+                                <div class="col-md-3 mb-2">
+                                    <div class="form-check">
+                                        <input class="form-check-input" type="checkbox" @bind="searchQuery.RequireBalcony" id="balcony">
+                                        <label class="form-check-label" for="balcony">
+                                            <i class="bi bi-building"></i> Balkon
+                                        </label>
+                                    </div>
+                                </div>
+                                <div class="col-md-3 mb-2">
+                                    <div class="form-check">
+                                        <input class="form-check-input" type="checkbox" @bind="searchQuery.RequireSeaView" id="seaview">
+                                        <label class="form-check-label" for="seaview">
+                                            <i class="bi bi-water"></i> Havudsigt
+                                        </label>
+                                    </div>
+                                </div>
+                                <div class="col-md-3 mb-2">
+                                    <div class="form-check">
+                                        <input class="form-check-input" type="checkbox" @bind="searchQuery.RequireWifi" id="wifi">
+                                        <label class="form-check-label" for="wifi">
+                                            <i class="bi bi-wifi"></i> WiFi
+                                        </label>
+                                    </div>
+                                </div>
+                                <div class="col-md-3 mb-2">
+                                    <div class="form-check">
+                                        <input class="form-check-input" type="checkbox" @bind="searchQuery.RequireAirConditioning" id="ac">
+                                        <label class="form-check-label" for="ac">
+                                            <i class="bi bi-snow"></i> Aircondition
+                                        </label>
+                                    </div>
+                                </div>
+                                <div class="col-md-3 mb-2">
+                                    <div class="form-check">
+                                        <input class="form-check-input" type="checkbox" @bind="searchQuery.RequireMinibar" id="minibar">
+                                        <label class="form-check-label" for="minibar">
+                                            <i class="bi bi-cup"></i> Minibar
+                                        </label>
+                                    </div>
+                                </div>
+                                <div class="col-md-3 mb-2">
+                                    <div class="form-check">
+                                        <input class="form-check-input" type="checkbox" @bind="searchQuery.RequireAccessible" id="accessible">
+                                        <label class="form-check-label" for="accessible">
+                                            <i class="bi bi-universal-access"></i> Handicapvenligt
+                                        </label>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            }
+
+            <!-- Search Button -->
+            <div class="d-grid gap-2">
+                <button type="submit" class="btn btn-primary" disabled="@isSearching">
+                    @if (isSearching)
+                    {
+                        <span class="spinner-border spinner-border-sm me-2" role="status"></span>
+                        <span>Søger...</span>
+                    }
+                    else
+                    {
+                        <i class="bi bi-search me-2"></i>
+                        <span>🔍 Find min drømmeferie</span>
+                    }
+                </button>
+            </div>
+        </EditForm>
+
+        <!-- Error Message -->
+        @if (!string.IsNullOrEmpty(errorMessage))
+        {
+            <div class="alert alert-danger mt-3" role="alert">
+                <i class="bi bi-exclamation-triangle"></i> 
+                @((MarkupString)errorMessage)
+            </div>
+        }
+    </div>
+</div>
+
+<!-- Search Results -->
+@if (searchResults != null)
+{
+    <div class="card shadow-sm mt-4">
+        <div class="card-body">
+            <h5 class="card-title">
+                <i class="bi bi-list-check text-success"></i> Søgeresultater
+            </h5>
+            
+            @if (searchResults.Length == 0)
+            {
+                <div class="alert alert-info" role="alert">
+                    <i class="bi bi-info-circle"></i> Ingen ledige rum fundet for de valgte kriterier.
+                </div>
+            }
+            else
+            {
+                <p class="text-muted mb-3">Fundet @searchResults.Length rum (@availableCount ledige)</p>
+                
+                <div class="row">
+                    @foreach (var room in searchResults)
+                    {
+                        <div class="col-md-6 col-lg-4 mb-3">
+                            <div class="card h-100 @(room.IsAvailable ? "border-success" : "border-warning")">
+                                <div class="card-header @(room.IsAvailable ? "bg-success text-white" : "bg-warning text-dark")">
+                                    <div class="d-flex justify-content-between align-items-center">
+                                        <span><strong>Rum @room.Number</strong></span>
+                                        <span class="badge @(room.IsAvailable ? "bg-light text-success" : "bg-light text-warning")">
+                                            @(room.IsAvailable ? "Ledig" : "Optaget")
+                                        </span>
+                                    </div>
+                                </div>
+                                <div class="card-body">
+                                    <h6 class="card-title">@room.RoomType</h6>
+                                    <p class="card-text">
+                                        <small class="text-muted">@room.HotelName</small><br>
+                                        <strong>@room.PricePerNight.ToString("C") / nat</strong><br>
+                                        <strong>Total: @room.TotalPrice.ToString("C")</strong>
+                                    </p>
+                                    
+                                    <div class="mb-2">
+                                        <span class="badge bg-info me-1">@room.Capacity gæster</span>
+                                        <span class="badge bg-info me-1">@room.NumberOfBeds senge</span>
+                                        <span class="badge bg-info">@room.SquareMeters m²</span>
+                                    </div>
+
+                                    @if (room.Features.Any())
+                                    {
+                                        <div class="mb-2">
+                                            @foreach (var feature in room.Features)
+                                            {
+                                                <span class="badge bg-secondary me-1">@feature</span>
+                                            }
+                                        </div>
+                                    }
+
+                                    @if (!string.IsNullOrEmpty(room.Description))
+                                    {
+                                        <p class="card-text"><small class="text-muted">@room.Description</small></p>
+                                    }
+                                </div>
+                                @if (room.IsAvailable)
+                                {
+                                    <div class="card-footer">
+                                        <button class="btn btn-success btn-sm w-100" @onclick="() => BookRoom(room)">
+                                            <i class="bi bi-calendar-check"></i> Book dette rum
+                                        </button>
+                                    </div>
+                                }
+                            </div>
+                        </div>
+                    }
+                </div>
+            }
+        </div>
+    </div>
+}
+
+<!-- Booking Modal -->
+<BookingModal @ref="bookingModal" OnClose="OnBookingModalClose" OnBookingCreated="OnBookingCreated" />
+
+@code {
+    private RoomAvailabilityQueryDto searchQuery = new();
+    private HotelGetDto[]? hotels;
+    private RoomAvailabilityResultDto[]? searchResults;
+    private bool isSearching = false;
+    private bool showAdvancedOptions = false;
+    private string errorMessage = string.Empty;
+    private int availableCount = 0;
+    private BookingModal? bookingModal;
+
+    protected override async Task OnInitializedAsync()
+    {
+        // Set default dates
+        searchQuery.CheckInDate = DateTime.Today.AddDays(1);
+        searchQuery.CheckOutDate = DateTime.Today.AddDays(2);
+        searchQuery.NumberOfGuests = 2;
+
+        // Load hotels
+        await LoadHotels();
+    }
+
+    private async Task LoadHotels()
+    {
+        try
+        {
+            hotels = await ApiService.GetHotelsAsync();
+        }
+        catch (Exception ex)
+        {
+            errorMessage = "Kunne ikke indlæse hoteller: " + ex.Message;
+        }
+    }
+
+    private async Task HandleSearch()
+    {
+        errorMessage = string.Empty;
+        isSearching = true;
+        searchResults = null;
+
+        try
+        {
+            // Validate dates
+            if (searchQuery.CheckOutDate <= searchQuery.CheckInDate)
+            {
+                errorMessage = "Check-out dato skal være efter check-in dato";
+                return;
+            }
+
+            if (searchQuery.CheckInDate < DateTime.Today)
+            {
+                errorMessage = "Check-in dato kan ikke være i fortiden";
+                return;
+            }
+
+            searchResults = await ApiService.SearchRoomAvailabilityAsync(searchQuery);
+            
+            if (searchResults != null)
+            {
+                availableCount = searchResults.Count(r => r.IsAvailable);
+            }
+        }
+        catch (Exception ex)
+        {
+            errorMessage = "Fejl ved søgning: " + ex.Message;
+        }
+        finally
+        {
+            isSearching = false;
+        }
+    }
+
+    private void ToggleAdvancedOptions()
+    {
+        showAdvancedOptions = !showAdvancedOptions;
+    }
+
+    private async Task BookRoom(RoomAvailabilityResultDto room)
+    {
+        // Check if user is authenticated
+        if (!await AuthService.IsAuthenticatedAsync())
+        {
+            errorMessage = "Du skal være logget ind for at lave en booking. <a href='/login'>Log ind her</a>";
+            return;
+        }
+
+        // Show booking modal
+        if (bookingModal != null)
+        {
+            bookingModal.Show(room, searchQuery.CheckInDate, searchQuery.CheckOutDate);
+        }
+    }
+
+    private void OnBookingModalClose()
+    {
+        // Modal was closed, no action needed
+    }
+
+    private async Task OnBookingCreated(BookingGetDto booking)
+    {
+        // Booking was created successfully
+        errorMessage = string.Empty;
+        
+        // Navigate to booking details or show success message
+        Navigation.NavigateTo($"/booking/{booking.Id}");
+    }
+}

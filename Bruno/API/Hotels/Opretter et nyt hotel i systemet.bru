@@ -1,0 +1,55 @@
+meta {
+  name: Opretter et nyt hotel i systemet.
+  type: http
+  seq: 2
+}
+
+post {
+  url: {{baseUrl}}/api/Hotels
+  body: json
+  auth: none
+}
+
+headers {
+  Authorization: Bearer {{JWT-Admin}}
+}
+
+body:json {
+  {
+    "name": "Dummy Hotel",
+    "address": "Dummy Street"
+  }
+}
+
+script:post-response {
+  // Gem Hotel ID fra responset
+    try {
+      if (res.body && res.body.id) {
+        console.log("Created Hotel ID: " + res.body.id);
+        bru.setEnvVar("hotel-id", res.body.id);
+        console.log("Hotel ID gemt som variabel: {{hotel-id}}");
+      } else {
+        console.log("Ingen ID fundet i responset");
+        console.log("Response body:", res.body);
+      }
+    } catch (error) {
+      console.log("Fejl ved håndtering af responset: " + error.message);
+    }
+}
+
+tests {
+  // Test status kode
+  test("Status kode skal være 201 OK", function() {
+    expect(res.status).to.equal(201);
+  });
+  
+  // Test at der kommer et ID tilbage
+  test("Response body indeholder id", function() {
+    expect(res.body).to.have.property("id");
+  });
+  
+  // (Valgfrit) Test at navnet matches payload
+  test("Response body indeholder korrekt name", function() {
+    expect(res.body).to.have.property("name");
+  });
+}

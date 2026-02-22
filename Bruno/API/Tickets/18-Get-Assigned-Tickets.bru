@@ -1,0 +1,84 @@
+meta {
+  name: Get Assigned Tickets
+  type: http
+  seq: 18
+  description: |
+    Henter alle tickets tildelt til en specifik support medarbejder.
+    Dette simulerer en support medarbejder der skal se deres tildelte tickets.
+    
+    Features tested:
+    - Assigned tickets
+    - Support medarbejder adgangskontrol
+    - Filtrering
+    - Sortering
+}
+
+get {
+  url: {{baseUrl}}/assigned/{{supportUserId}}
+  query: {
+    page: 1
+    pageSize: 20
+    sortBy: "priority"
+    sortOrder: "desc"
+  }
+  auth: bearer
+}
+
+auth:bearer {
+  token: {{authToken}}
+}
+
+tests {
+  test("Status code is 200 OK", function() {
+    expect(res.getStatus()).to.equal(200);
+  });
+  
+  test("Response contains tickets array", function() {
+    expect(res.getBody()).to.have.property("data");
+    expect(res.getBody().data).to.be.an("array");
+  });
+  
+  test("Response contains pagination info", function() {
+    expect(res.getBody()).to.have.property("pagination");
+    expect(res.getBody().pagination).to.have.property("page");
+    expect(res.getBody().pagination).to.have.property("pageSize");
+    expect(res.getBody().pagination).to.have.property("totalCount");
+  });
+  
+  test("All tickets are assigned to the correct support user", function() {
+    res.getBody().data.forEach(ticket => {
+      expect(ticket).to.have.property("assigneeId");
+      expect(ticket.assigneeId).to.equal(supportUserId);
+    });
+  });
+  
+  test("Tickets have required fields", function() {
+    if (res.getBody().data.length > 0) {
+      const ticket = res.getBody().data[0];
+      expect(ticket).to.have.property("id");
+      expect(ticket).to.have.property("ticketNumber");
+      expect(ticket).to.have.property("title");
+      expect(ticket).to.have.property("status");
+      expect(ticket).to.have.property("priority");
+      expect(ticket).to.have.property("serviceType");
+      expect(ticket).to.have.property("createdAt");
+    }
+  });
+  
+  test("Tickets are sorted by priority (highest first)", function() {
+    if (res.getBody().data.length > 1) {
+      const tickets = res.getBody().data;
+      const priorityOrder = { "Critical": 4, "High": 3, "Medium": 2, "Low": 1 };
+      
+      for (let i = 0; i < tickets.length - 1; i++) {
+        const currentPriority = priorityOrder[tickets[i].priority];
+        const nextPriority = priorityOrder[tickets[i + 1].priority];
+        expect(currentPriority).to.be.at.least(nextPriority);
+      }
+    }
+  });
+  
+  test("Response time is acceptable", function() {
+    expect(res.getResponseTime()).to.be.below(2000);
+  });
+}

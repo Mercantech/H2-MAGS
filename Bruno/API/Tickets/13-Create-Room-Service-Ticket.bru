@@ -1,0 +1,99 @@
+meta {
+  name: Create Room Service Ticket
+  type: http
+  seq: 13
+  description: |
+    Opretter et ticket for room service.
+    Dette simulerer en bruger der har brug for room service i deres værelse.
+    
+    Features tested:
+    - Room service ticket
+    - Booking reference
+    - High priority
+    - Service request kategori
+}
+
+post {
+  url: {{baseUrl}}
+  body: json
+  auth: bearer
+}
+
+auth:bearer {
+  token: {{authToken}}
+}
+
+body:json {
+  {
+    "title": "Room Service - Morgenmad bestilling",
+    "description": "Hej! Jeg vil gerne bestille morgenmad til værelse 101. Jeg vil have: 2x croissants, 1x kaffe, 1x juice og 1x yoghurt. Kan I levere det kl. 8:00 i morgen?",
+    "serviceType": "RoomService",
+    "category": "Service Request",
+    "subCategory": "Food & Beverage",
+    "priority": "Medium",
+    "bookingId": "{{bookingId}}",
+    "roomId": "{{roomId}}",
+    "hotelId": "{{hotelId}}",
+    "riskLevel": "Low",
+    "impact": "Low"
+  }
+}
+
+tests {
+  test("Status code is 201 Created", function() {
+    expect(res.getStatus()).to.equal(201);
+  });
+  
+  test("Response contains ticket data", function() {
+    expect(res.getBody()).to.have.property("data");
+    expect(res.getBody().data).to.have.property("id");
+    expect(res.getBody().data).to.have.property("ticketNumber");
+    expect(res.getBody().data).to.have.property("title");
+  });
+  
+  test("Ticket has correct service type", function() {
+    expect(res.getBody().data).to.have.property("serviceType");
+    expect(res.getBody().data.serviceType).to.equal("RoomService");
+  });
+  
+  test("Ticket has correct category", function() {
+    expect(res.getBody().data).to.have.property("category");
+    expect(res.getBody().data.category).to.equal("Service Request");
+  });
+  
+  test("Ticket has correct subcategory", function() {
+    expect(res.getBody().data).to.have.property("subCategory");
+    expect(res.getBody().data.subCategory).to.equal("Food & Beverage");
+  });
+  
+  test("Ticket has correct priority", function() {
+    expect(res.getBody().data).to.have.property("priority");
+    expect(res.getBody().data.priority).to.equal("Medium");
+  });
+  
+  test("Ticket is linked to booking", function() {
+    expect(res.getBody().data).to.have.property("bookingId");
+    expect(res.getBody().data.bookingId).to.equal(bookingId);
+  });
+  
+  test("Ticket has room information", function() {
+    expect(res.getBody().data).to.have.property("roomId");
+    expect(res.getBody().data).to.have.property("roomNumber");
+    expect(res.getBody().data.roomId).to.equal(roomId);
+  });
+  
+  test("Ticket has hotel information", function() {
+    expect(res.getBody().data).to.have.property("hotelId");
+    expect(res.getBody().data).to.have.property("hotelName");
+    expect(res.getBody().data.hotelId).to.equal(hotelId);
+  });
+  
+  test("Ticket status is Open", function() {
+    expect(res.getBody().data).to.have.property("status");
+    expect(res.getBody().data.status).to.equal("Open");
+  });
+  
+  test("Response time is acceptable", function() {
+    expect(res.getResponseTime()).to.be.below(2000);
+  });
+}

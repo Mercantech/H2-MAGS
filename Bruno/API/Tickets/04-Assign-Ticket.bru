@@ -1,0 +1,61 @@
+meta {
+  name: Assign Ticket to Support
+  type: http
+  seq: 4
+  description: |
+    Tildeler et ticket til en support medarbejder.
+    Dette simulerer en support medarbejder der tager ansvar for et ticket.
+    
+    Features tested:
+    - Ticket tildeling
+    - Status opdatering
+    - Bruger adgangskontrol
+    - Change tracking
+}
+
+post {
+  url: {{baseUrl}}/{{ticketId}}/assign/{{supportUserId}}
+  auth: bearer
+}
+
+auth:bearer {
+  token: {{authToken}}
+}
+
+tests {
+  test("Status code is 200 OK", function() {
+    expect(res.getStatus()).to.equal(200);
+  });
+  
+  test("Response contains updated ticket data", function() {
+    expect(res.getBody()).to.have.property("data");
+    expect(res.getBody().data).to.have.property("id");
+    expect(res.getBody().data.id).to.equal(ticketId);
+  });
+  
+  test("Ticket is assigned to support user", function() {
+    expect(res.getBody().data).to.have.property("assigneeId");
+    expect(res.getBody().data.assigneeId).to.equal(supportUserId);
+  });
+  
+  test("Ticket status is updated to InProgress", function() {
+    expect(res.getBody().data).to.have.property("status");
+    expect(res.getBody().data.status).to.equal("InProgress");
+  });
+  
+  test("Ticket has assignee information", function() {
+    expect(res.getBody().data).to.have.property("assigneeEmail");
+    expect(res.getBody().data).to.have.property("assigneeUsername");
+  });
+  
+  test("Ticket updatedAt is recent", function() {
+    const updatedAt = new Date(res.getBody().data.updatedAt);
+    const now = new Date();
+    const diffMinutes = (now - updatedAt) / (1000 * 60);
+    expect(diffMinutes).to.be.below(5);
+  });
+  
+  test("Response time is acceptable", function() {
+    expect(res.getResponseTime()).to.be.below(2000);
+  });
+}

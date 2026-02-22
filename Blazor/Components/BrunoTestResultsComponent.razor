@@ -1,0 +1,300 @@
+@using DomainModels
+@using Blazor.Services
+@inject APIService ApiService
+@inject IJSRuntime JSRuntime
+
+<div class="bruno-test-results">
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <h2>🧪 Bruno API Test Resultater</h2>
+        <div>
+            <button class="btn btn-outline-primary btn-sm me-2" @onclick="RefreshResults" disabled="@isLoading">
+                @if (isLoading)
+                {
+                    <span class="spinner-border spinner-border-sm me-1" role="status"></span>
+                }
+                Opdater
+            </button>
+            <button class="btn btn-outline-danger btn-sm" @onclick="CleanupResults" disabled="@isLoading">
+                🧹 Ryd Op
+            </button>
+        </div>
+    </div>
+
+    @if (isLoading)
+    {
+        <div class="text-center">
+            <div class="spinner-border" role="status">
+                <span class="visually-hidden">Indlæser...</span>
+            </div>
+            <p class="mt-2">Henter test resultater...</p>
+        </div>
+    }
+    else if (overview == null)
+    {
+        <div class="alert alert-warning">
+            <h4>⚠️ Ingen test resultater fundet</h4>
+            <p>Der er ingen Bruno test resultater tilgængelige. Dette kan skyldes:</p>
+            <ul>
+                <li>Bruno tests er ikke kørt endnu</li>
+                <li>Test resultater er ikke gemt korrekt</li>
+                <li>API kan ikke tilgå test resultater mappen</li>
+            </ul>
+        </div>
+    }
+    else
+    {
+        <!-- Test Statistikker -->
+        @if (overview.LatestTestData != null)
+        {
+            <div class="row mb-4">
+                <div class="col-md-3">
+                    <div class="card text-center">
+                        <div class="card-body">
+                            <h5 class="card-title text-success">@overview.LatestTestData.Summary.PassedRequests</h5>
+                            <p class="card-text">Beståede Requests</p>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-md-3">
+                    <div class="card text-center">
+                        <div class="card-body">
+                            <h5 class="card-title text-danger">@overview.LatestTestData.Summary.FailedRequests</h5>
+                            <p class="card-text">Fejlede Requests</p>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-md-3">
+                    <div class="card text-center">
+                        <div class="card-body">
+                            <h5 class="card-title text-info">@overview.LatestTestData.Summary.PassedTests</h5>
+                            <p class="card-text">Beståede Tests</p>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-md-3">
+                    <div class="card text-center">
+                        <div class="card-body">
+                            <h5 class="card-title text-warning">@overview.LatestTestData.Summary.FailedTests</h5>
+                            <p class="card-text">Fejlede Tests</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        }
+
+        <!-- Tilgængelige Resultater -->
+        <div class="card">
+            <div class="card-header">
+                <h5>📁 Tilgængelige Test Resultater</h5>
+            </div>
+            <div class="card-body">
+                @if (overview.AvailableResults.Any())
+                {
+                    <div class="table-responsive">
+                        <table class="table table-striped">
+                            <thead>
+                                <tr>
+                                    <th>Filnavn</th>
+                                    <th>Type</th>
+                                    <th>Størrelse</th>
+                                    <th>Senest Modificeret</th>
+                                    <th>Handlinger</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                @foreach (var result in overview.AvailableResults)
+                                {
+                                    <tr>
+                                        <td>@result.Filename</td>
+                                        <td>
+                                            @if (result.Type == "json")
+                                            {
+                                                <span class="badge bg-primary">JSON</span>
+                                            }
+                                            else
+                                            {
+                                                <span class="badge bg-success">HTML</span>
+                                            }
+                                        </td>
+                                        <td>@FormatFileSize(result.Size)</td>
+                                        <td>@result.LastModified.ToString("dd/MM/yyyy HH:mm")</td>
+                                        <td>
+                                            @if (result.Type == "html")
+                                            {
+                                                <button class="btn btn-sm btn-outline-primary" @onclick="() => ViewHtmlReport(result.Filename)">
+                                                    👁️ Vis Rapport
+                                                </button>
+                                            }
+                                            else
+                                            {
+                                                <button class="btn btn-sm btn-outline-secondary" @onclick="() => ViewJsonData(result.Filename)">
+                                                    📊 Vis Data
+                                                </button>
+                                            }
+                                        </td>
+                                    </tr>
+                                }
+                            </tbody>
+                        </table>
+                    </div>
+                }
+                else
+                {
+                    <p class="text-muted">Ingen test resultater fundet.</p>
+                }
+            </div>
+        </div>
+
+        <!-- HTML Rapport Visning -->
+        @if (!string.IsNullOrEmpty(selectedHtmlReport))
+        {
+            <div class="card mt-4">
+                <div class="card-header d-flex justify-content-between align-items-center">
+                    <h5>📄 HTML Test Rapport</h5>
+                    <div>
+                        <button class="btn btn-sm btn-outline-primary me-2" @onclick="() => DownloadHtmlReport(selectedHtmlReportFilename)">
+                            💾 Download
+                        </button>
+                        <button class="btn btn-sm btn-outline-secondary" @onclick="CloseHtmlReport">
+                            ✕ Luk
+                        </button>
+                    </div>
+                </div>
+                <div class="card-body p-0">
+                    <div style="height: 600px; overflow: auto; border: 1px solid #dee2e6;">
+                        <iframe src="@GetHtmlReportUrl(selectedHtmlReportFilename)" 
+                                style="width: 100%; height: 100%; border: none;"
+                                title="Bruno Test Rapport">
+                        </iframe>
+                    </div>
+                </div>
+            </div>
+        }
+
+        <!-- JSON Data Visning -->
+        @if (!string.IsNullOrEmpty(selectedJsonData))
+        {
+            <div class="card mt-4">
+                <div class="card-header d-flex justify-content-between align-items-center">
+                    <h5>📊 JSON Test Data</h5>
+                    <button class="btn btn-sm btn-outline-secondary" @onclick="CloseJsonData">
+                        ✕ Luk
+                    </button>
+                </div>
+                <div class="card-body">
+                    <pre class="bg-light p-3" style="max-height: 400px; overflow: auto;"><code>@selectedJsonData</code></pre>
+                </div>
+            </div>
+        }
+    }
+</div>
+
+@code {
+    private TestResultsOverview? overview;
+    private bool isLoading = true;
+    private string? selectedHtmlReport;
+    private string? selectedHtmlReportFilename;
+    private string? selectedJsonData;
+
+    protected override async Task OnInitializedAsync()
+    {
+        await LoadResults();
+    }
+
+    private async Task LoadResults()
+    {
+        isLoading = true;
+        StateHasChanged();
+
+        try
+        {
+            overview = await ApiService.GetBrunoTestResultsOverviewAsync();
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine($"Fejl ved indlæsning af test resultater: {ex.Message}");
+        }
+        finally
+        {
+            isLoading = false;
+            StateHasChanged();
+        }
+    }
+
+    private async Task RefreshResults()
+    {
+        await LoadResults();
+    }
+
+    private async Task CleanupResults()
+    {
+        if (await JSRuntime.InvokeAsync<bool>("confirm", "Er du sikker på at du vil rydde op i gamle test resultater?"))
+        {
+            var success = await ApiService.CleanupBrunoTestResultsAsync();
+            if (success)
+            {
+                await LoadResults();
+                await JSRuntime.InvokeAsync<object>("alert", "Oprydning gennemført!");
+            }
+            else
+            {
+                await JSRuntime.InvokeAsync<object>("alert", "Fejl ved oprydning af test resultater.");
+            }
+        }
+    }
+
+    private async Task ViewHtmlReport(string filename)
+    {
+        selectedHtmlReport = "loading"; // Placeholder for loading state
+        selectedHtmlReportFilename = filename;
+        selectedJsonData = null;
+        StateHasChanged();
+    }
+
+    private async Task ViewJsonData(string filename)
+    {
+        var data = await ApiService.GetBrunoTestResultByFilenameAsync(filename);
+        selectedJsonData = data != null ? System.Text.Json.JsonSerializer.Serialize(data, new System.Text.Json.JsonSerializerOptions { WriteIndented = true }) : null;
+        selectedHtmlReport = null;
+        StateHasChanged();
+    }
+
+    private void CloseHtmlReport()
+    {
+        selectedHtmlReport = null;
+        selectedHtmlReportFilename = null;
+        StateHasChanged();
+    }
+
+    private string GetHtmlReportUrl(string filename)
+    {
+        // Brug API endpoint i stedet for direkte fil adgang
+        return $"/api/BrunoTestResults/report/{filename}";
+    }
+
+    private async Task DownloadHtmlReport(string filename)
+    {
+        // Brug download endpoint i stedet for report endpoint
+        var downloadUrl = $"/api/BrunoTestResults/download/{filename}";
+        await JSRuntime.InvokeAsync<object>("downloadFile", downloadUrl, filename);
+    }
+
+    private void CloseJsonData()
+    {
+        selectedJsonData = null;
+        StateHasChanged();
+    }
+
+    private string FormatFileSize(long bytes)
+    {
+        string[] sizes = { "B", "KB", "MB", "GB" };
+        double len = bytes;
+        int order = 0;
+        while (len >= 1024 && order < sizes.Length - 1)
+        {
+            order++;
+            len = len / 1024;
+        }
+        return $"{len:0.##} {sizes[order]}";
+    }
+}

@@ -1,0 +1,19 @@
+meta {
+  name: Seeder kun bookinger baseret på eksisterende brugere og rum.
+  type: http
+  seq: 6
+}
+
+post {
+  url: {{baseUrl}}/api/DataSeeder/seed-bookings
+  body: none
+  auth: none
+}
+
+params:query {
+  ~bookingCount: 
+}
+
+headers {
+  Authorization: {{apiKey}}
+}

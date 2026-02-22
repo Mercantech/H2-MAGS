@@ -1,0 +1,22 @@
+meta {
+  name: Seeder kun brugere med test data.
+  type: http
+  seq: 4
+  tags: [
+    Seeder
+  ]
+}
+
+post {
+  url: {{baseUrl}}/api/DataSeeder/seed-users
+  body: none
+  auth: none
+}
+
+params:query {
+  ~count: 
+}
+
+headers {
+  Authorization: {{apiKey}}
+}

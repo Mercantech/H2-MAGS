@@ -1,0 +1,22 @@
+@page "/profile"
+@using Blazor.Components
+@using Blazor.Services
+@inject AuthenticationService AuthService
+@inject NavigationManager Navigation
+
+<PageTitle>Min Profil - H2 Med MAGS</PageTitle>
+
+<div class="profile-page">
+    <UserProfile />
+</div>
+
+@code {
+    protected override async Task OnInitializedAsync()
+    {
+        // Tjek om brugeren er logget ind
+        if (!await AuthService.IsAuthenticatedAsync())
+        {
+            Navigation.NavigateTo("/login");
+        }
+    }
+}

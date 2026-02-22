@@ -1,0 +1,105 @@
+services:
+  # API Service
+  api:
+    build:
+      context: .
+      dockerfile: API/Dockerfile
+      args:
+        BUILD_DATE: ${BUILD_DATE:-$(date -u +'%Y-%m-%dT%H:%M:%SZ')}
+    container_name: h2-api-mags25
+    ports:
+      - "8751:8045"
+    env_file:
+      - .env
+    environment:
+      - ASPNETCORE_ENVIRONMENT=Development
+      - ASPNETCORE_URLS=http://+:8045
+      - DOTNET_USE_POLLING_FILE_WATCHER=1
+      - DOTNET_RUNNING_IN_CONTAINER=true
+      - SMTP_SERVER=${SMTP_SERVER}
+      - SMTP_PORT=${SMTP_PORT}
+      - SMTP_USERNAME=${SMTP_USERNAME}
+      - SMTP_PASSWORD=${SMTP_PASSWORD}
+      - FROM_EMAIL=${FROM_EMAIL}
+      - FROM_NAME=${FROM_NAME}
+    volumes:
+      - ./test-results:/app/test-results
+    networks:
+      - h2-network
+    restart: unless-stopped
+
+  # Blazor WASM App
+  blazor:
+    build:
+      context: .
+      dockerfile: Blazor/Dockerfile
+      args:
+        BUILD_DATE: ${BUILD_DATE:-$(date -u +'%Y-%m-%dT%H:%M:%SZ')}
+        VCS_REF: ${VCS_REF:-$(git rev-parse --short HEAD 2>/dev/null || echo 'unknown')}
+    container_name: h2-blazor-mags25
+    ports:
+      - "8752:80"
+    env_file:
+      - .env
+    environment:
+      - ASPNETCORE_ENVIRONMENT=Development
+    depends_on:
+      - api
+    networks:
+      - h2-network
+    restart: unless-stopped
+
+  # Admin Dashboard (Svelte)
+  admin-dashboard:
+    build:
+      context: ./admin-dashboard
+      dockerfile: Dockerfile
+      args:
+        BUILD_DATE: ${BUILD_DATE:-$(date -u +'%Y-%m-%dT%H:%M:%SZ')}
+        VCS_REF: ${VCS_REF:-$(git rev-parse --short HEAD 2>/dev/null || echo 'unknown')}
+    container_name: h2-admin-dashboard-mags25
+    ports:
+      - "8753:3000"
+    env_file:
+      - .env
+    environment:
+      - NODE_ENV=production
+    depends_on:
+      - api
+    networks:
+      - h2-network
+    restart: unless-stopped
+
+  # Bruno API Tests
+  bruno-tests:
+    image: node:20-alpine
+    container_name: h2-bruno-tests-mags25
+    working_dir: /app
+    volumes:
+      - ./Bruno:/app/Bruno
+      - ./test-results:/app/test-results
+    environment:
+      - NODE_ENV=production
+    command: >
+      sh -c "
+        echo '🚀 Installing Bruno CLI...' &&
+        npm install -g @usebruno/cli &&
+        echo '⏳ Waiting for API to be ready...' &&
+        sleep 30 &&
+        echo '🧪 Running Bruno API Tests...' &&
+        cd Bruno/API &&
+        npx @usebruno/cli run --env H2-MAGS --output /app/test-results/test-report-$$(date +%Y-%m-%d_%H-%M-%S).html --format html &&
+        npx @usebruno/cli run --env H2-MAGS --output /app/test-results/test-results-$$(date +%Y-%m-%d_%H-%M-%S).json --format json &&
+        echo '✅ Tests completed! Results saved to test-results/ folder' &&
+        echo '📊 Test Summary:' &&
+        ls -la /app/test-results/
+      "
+    depends_on:
+      - api
+    networks:
+      - h2-network
+    restart: "no"
+
+networks:
+  h2-network:
+    driver: bridge

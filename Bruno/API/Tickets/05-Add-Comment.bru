@@ -1,0 +1,75 @@
+meta {
+  name: Add Comment to Ticket
+  type: http
+  seq: 5
+  description: |
+    Tilføjer en kommentar til et ticket.
+    Dette simulerer en support medarbejder der kommunikerer med brugeren.
+    
+    Features tested:
+    - Kommentar tilføjelse
+    - Bruger information
+    - Timestamp tracking
+    - Internal vs public comments
+}
+
+post {
+  url: {{baseUrl}}/{{ticketId}}/comments
+  body: json
+  auth: bearer
+}
+
+auth:bearer {
+  token: {{authToken}}
+}
+
+body:json {
+  {
+    "comment": "Hej! Jeg har tildelt dit ticket til mig. Jeg vil sende rengøringspersonalet forbi værelse 101 inden for de næste 2 timer. Tak for din tålmodighed!",
+    "isInternal": false
+  }
+}
+
+tests {
+  test("Status code is 201 Created", function() {
+    expect(res.getStatus()).to.equal(201);
+  });
+  
+  test("Response contains comment data", function() {
+    expect(res.getBody()).to.have.property("data");
+    expect(res.getBody().data).to.have.property("id");
+    expect(res.getBody().data).to.have.property("comment");
+  });
+  
+  test("Comment has correct content", function() {
+    expect(res.getBody().data.comment).to.include("rengøringspersonalet");
+    expect(res.getBody().data.comment).to.include("værelse 101");
+  });
+  
+  test("Comment is not internal", function() {
+    expect(res.getBody().data).to.have.property("isInternal");
+    expect(res.getBody().data.isInternal).to.equal(false);
+  });
+  
+  test("Comment has author information", function() {
+    expect(res.getBody().data).to.have.property("authorId");
+    expect(res.getBody().data).to.have.property("authorName");
+  });
+  
+  test("Comment has correct ticket ID", function() {
+    expect(res.getBody().data).to.have.property("ticketId");
+    expect(res.getBody().data.ticketId).to.equal(ticketId);
+  });
+  
+  test("Comment has timestamp", function() {
+    expect(res.getBody().data).to.have.property("createdAt");
+    const createdAt = new Date(res.getBody().data.createdAt);
+    const now = new Date();
+    const diffMinutes = (now - createdAt) / (1000 * 60);
+    expect(diffMinutes).to.be.below(5);
+  });
+  
+  test("Response time is acceptable", function() {
+    expect(res.getResponseTime()).to.be.below(2000);
+  });
+}

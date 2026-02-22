@@ -1,0 +1,74 @@
+meta {
+  name: Close Ticket
+  type: http
+  seq: 8
+  description: |
+    Lukker et ticket med løsning.
+    Dette simulerer en support medarbejder der har løst problemet.
+    
+    Features tested:
+    - Ticket lukning
+    - Resolution tracking
+    - Status opdatering
+    - Timestamp tracking
+}
+
+post {
+  url: {{baseUrl}}/{{ticketId}}/close
+  body: json
+  auth: bearer
+}
+
+auth:bearer {
+  token: {{authToken}}
+}
+
+body:json {
+  {
+    "resolution": "Rengøringspersonalet har besøgt værelse 101 og gennemført fuld rengøring. Værelset er nu klar til brugeren. Brugeren er blevet informeret om gennemførelsen."
+  }
+}
+
+tests {
+  test("Status code is 200 OK", function() {
+    expect(res.getStatus()).to.equal(200);
+  });
+  
+  test("Response contains updated ticket data", function() {
+    expect(res.getBody()).to.have.property("data");
+    expect(res.getBody().data).to.have.property("id");
+    expect(res.getBody().data.id).to.equal(ticketId);
+  });
+  
+  test("Ticket status is Closed", function() {
+    expect(res.getBody().data).to.have.property("status");
+    expect(res.getBody().data.status).to.equal("Closed");
+  });
+  
+  test("Ticket has resolution", function() {
+    expect(res.getBody().data).to.have.property("resolution");
+    expect(res.getBody().data.resolution).to.include("rengøringspersonalet");
+    expect(res.getBody().data.resolution).to.include("værelse 101");
+  });
+  
+  test("Ticket has closed timestamp", function() {
+    expect(res.getBody().data).to.have.property("closedAt");
+    expect(res.getBody().data.closedAt).to.not.be.null;
+    
+    const closedAt = new Date(res.getBody().data.closedAt);
+    const now = new Date();
+    const diffMinutes = (now - closedAt) / (1000 * 60);
+    expect(diffMinutes).to.be.below(5);
+  });
+  
+  test("Ticket updatedAt is recent", function() {
+    const updatedAt = new Date(res.getBody().data.updatedAt);
+    const now = new Date();
+    const diffMinutes = (now - updatedAt) / (1000 * 60);
+    expect(diffMinutes).to.be.below(5);
+  });
+  
+  test("Response time is acceptable", function() {
+    expect(res.getResponseTime()).to.be.below(2000);
+  });
+}

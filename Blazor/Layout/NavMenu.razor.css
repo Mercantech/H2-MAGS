@@ -1,0 +1,283 @@
+/* Modern Light Navigation Styling */
+.navbar-toggler {
+    background: linear-gradient(135deg, rgba(59, 130, 246, 0.1), rgba(16, 185, 129, 0.1));
+    border: 1px solid rgba(59, 130, 246, 0.2);
+    border-radius: 12px;
+    padding: 0.5rem;
+    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    position: relative;
+    z-index: 1;
+}
+
+.navbar-toggler:hover {
+    background: linear-gradient(135deg, rgba(59, 130, 246, 0.2), rgba(16, 185, 129, 0.2));
+    transform: translateY(-1px);
+    box-shadow: 0 4px 12px rgba(59, 130, 246, 0.2);
+}
+
+.navbar-toggler-icon {
+    background-image: url("data:image/svg+xml,%3csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 30 30'%3e%3cpath stroke='rgba%2859, 130, 246, 1%29' stroke-linecap='round' stroke-miterlimit='10' stroke-width='2' d='m4 7h22M4 15h22M4 23h22'/%3e%3c/svg%3e");
+    width: 1.5rem;
+    height: 1.5rem;
+}
+
+.top-row {
+    min-height: 4rem;
+    background: transparent;
+    position: relative;
+    z-index: 1;
+}
+
+.navbar-brand {
+    font-size: 1.5rem;
+    font-weight: 800;
+    background: linear-gradient(135deg, #3b82f6, #10b981, #f97316);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+    text-decoration: none !important;
+    transition: all 0.3s ease;
+    position: relative;
+    z-index: 1;
+}
+
+.navbar-brand:hover {
+    transform: scale(1.05);
+    filter: brightness(1.2);
+}
+
+.navbar-text {
+    font-size: 0.95rem;
+    font-weight: 600;
+    color: #1c1917 !important;
+    position: relative;
+    z-index: 1;
+}
+
+.navbar-text .badge {
+    font-size: 0.75rem;
+    padding: 0.4rem 0.8rem;
+    border-radius: 20px;
+    font-weight: 700;
+    margin-left: 0.5rem;
+    box-shadow: 0 2px 8px rgba(59, 130, 246, 0.2);
+    transition: all 0.3s ease;
+}
+
+.navbar-text .badge:hover {
+    transform: translateY(-1px);
+    box-shadow: 0 4px 12px rgba(59, 130, 246, 0.3);
+}
+
+/* Modern Icon Styling */
+.bi {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 1.5rem;
+    height: 1.5rem;
+    margin-right: 1rem;
+    font-size: 1.2rem;
+    transition: all 0.3s ease;
+    color: #3b82f6;
+}
+
+/* Navigation Items */
+.nav-item {
+    font-size: 0.95rem;
+    padding: 0.25rem 1.5rem;
+    margin: 0.25rem 0;
+    position: relative;
+}
+
+.nav-item:first-of-type {
+    padding-top: 2rem;
+    margin-top: 0;
+}
+
+.nav-item:last-of-type {
+    padding-bottom: 2rem;
+    margin-bottom: 0;
+}
+
+.nav-item ::deep a,
+.nav-item ::deep button.nav-link {
+    color: #44403c;
+    border-radius: 16px;
+    height: 3.5rem;
+    display: flex;
+    align-items: center;
+    padding: 0 1.5rem;
+    text-decoration: none;
+    font-weight: 600;
+    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    position: relative;
+    overflow: hidden;
+    border: none;
+    background: transparent;
+    width: 100%;
+    text-align: left;
+}
+
+.nav-item ::deep a::before,
+.nav-item ::deep button.nav-link::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: linear-gradient(135deg, rgba(59, 130, 246, 0.1), rgba(16, 185, 129, 0.1));
+    opacity: 0;
+    transition: all 0.3s ease;
+    border-radius: 16px;
+}
+
+.nav-item ::deep a:hover::before,
+.nav-item ::deep button.nav-link:hover::before {
+    opacity: 1;
+}
+
+.nav-item ::deep a:hover,
+.nav-item ::deep button.nav-link:hover {
+    color: #1c1917;
+    transform: translateX(8px);
+    box-shadow: 0 4px 20px rgba(59, 130, 246, 0.15);
+    background: rgba(59, 130, 246, 0.05);
+}
+
+.nav-item ::deep a:hover .bi,
+.nav-item ::deep button.nav-link:hover .bi {
+    color: #3b82f6;
+    transform: scale(1.1);
+    }
+
+.nav-item ::deep a.active {
+    background: linear-gradient(135deg, rgba(59, 130, 246, 0.15), rgba(16, 185, 129, 0.15));
+    color: #1c1917;
+    border: 1px solid rgba(59, 130, 246, 0.2);
+    box-shadow: 0 4px 20px rgba(59, 130, 246, 0.2);
+    transform: translateX(4px);
+}
+
+.nav-item ::deep a.active .bi {
+    color: #3b82f6;
+    transform: scale(1.05);
+}
+
+.nav-item ::deep button.nav-link:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+    transform: none;
+}
+
+.nav-item ::deep button.nav-link:disabled:hover {
+    transform: none;
+    box-shadow: none;
+}
+
+/* Modern Divider */
+.nav-divider {
+    border: none;
+    height: 1px;
+    background: linear-gradient(90deg, 
+        transparent, 
+        rgba(99, 102, 241, 0.3), 
+        transparent
+    );
+    margin: 1.5rem 2rem;
+    position: relative;
+}
+
+.nav-divider::before {
+    content: '';
+    position: absolute;
+    left: 50%;
+    top: 50%;
+    transform: translate(-50%, -50%);
+    width: 6px;
+    height: 6px;
+    background: #6366f1;
+    border-radius: 50%;
+    box-shadow: 0 0 10px rgba(99, 102, 241, 0.5);
+}
+
+/* Section Headers */
+.nav-item .text-muted {
+    color: #64748b !important;
+    font-size: 0.8rem;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.1em;
+    padding: 0.5rem 1.5rem;
+    margin: 1rem 0 0.5rem 0;
+}
+
+/* Scrollbar for Navigation */
+.nav-scrollable::-webkit-scrollbar {
+    width: 6px;
+}
+
+.nav-scrollable::-webkit-scrollbar-track {
+    background: transparent;
+}
+
+.nav-scrollable::-webkit-scrollbar-thumb {
+    background: rgba(99, 102, 241, 0.3);
+    border-radius: 3px;
+}
+
+.nav-scrollable::-webkit-scrollbar-thumb:hover {
+    background: rgba(99, 102, 241, 0.5);
+}
+
+/* Responsive Design */
+@media (max-width: 640.98px) {
+    .navbar-brand {
+        font-size: 1.25rem;
+    }
+    
+    .navbar-text {
+        font-size: 0.85rem;
+    }
+    
+    .nav-item {
+        padding: 0.25rem 1rem;
+    }
+    
+    .nav-item ::deep a,
+    .nav-item ::deep button.nav-link {
+        padding: 0 1rem;
+        height: 3rem;
+    }
+    
+    .nav-divider {
+        margin: 1rem 1.5rem;
+    }
+}
+
+@media (min-width: 641px) {
+    .navbar-toggler {
+        display: none;
+    }
+
+    .collapse {
+        display: block;
+    }
+
+    .nav-scrollable {
+        height: calc(100vh - 4rem);
+        overflow-y: auto;
+        padding-bottom: 2rem;
+    }
+}
+
+/* Loading Animation for Logout Button */
+@keyframes spin {
+    0% { transform: rotate(0deg); }
+    100% { transform: rotate(360deg); }
+}
+
+.spinner-border-sm {
+    animation: spin 1s linear infinite;
+}

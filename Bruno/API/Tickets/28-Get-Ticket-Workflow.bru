@@ -1,0 +1,79 @@
+meta {
+  name: Get Ticket Workflow Status
+  type: http
+  seq: 28
+  description: |
+    Henter workflow status for et ticket.
+    Dette simulerer en support medarbejder der skal se ticket workflow.
+    
+    Features tested:
+    - Workflow status
+    - State transitions
+    - Next actions
+    - Workflow validation
+}
+
+get {
+  url: {{baseUrl}}/{{ticketId}}/workflow
+  auth: bearer
+}
+
+auth:bearer {
+  token: {{authToken}}
+}
+
+tests {
+  test("Status code is 200 OK", function() {
+    expect(res.getStatus()).to.equal(200);
+  });
+  
+  test("Response contains workflow data", function() {
+    expect(res.getBody()).to.have.property("data");
+    expect(res.getBody().data).to.be.an("object");
+  });
+  
+  test("Workflow contains ticket information", function() {
+    const workflow = res.getBody().data;
+    expect(workflow).to.have.property("ticketId");
+    expect(workflow).to.have.property("currentStatus");
+    expect(workflow).to.have.property("workflowState");
+  });
+  
+  test("Workflow contains state information", function() {
+    const workflow = res.getBody().data;
+    expect(workflow).to.have.property("currentState");
+    expect(workflow).to.have.property("stateHistory");
+    expect(workflow).to.have.property("stateTransitions");
+  });
+  
+  test("Workflow contains next actions", function() {
+    const workflow = res.getBody().data;
+    expect(workflow).to.have.property("nextActions");
+    expect(workflow.nextActions).to.be.an("array");
+  });
+  
+  test("Workflow contains validation", function() {
+    const workflow = res.getBody().data;
+    expect(workflow).to.have.property("isValid");
+    expect(workflow).to.have.property("validationErrors");
+    expect(workflow).to.have.property("canTransition");
+  });
+  
+  test("Workflow contains progress information", function() {
+    const workflow = res.getBody().data;
+    expect(workflow).to.have.property("progressPercentage");
+    expect(workflow).to.have.property("completedSteps");
+    expect(workflow).to.have.property("totalSteps");
+  });
+  
+  test("Workflow contains SLA information", function() {
+    const workflow = res.getBody().data;
+    expect(workflow).to.have.property("slaCompliant");
+    expect(workflow).to.have.property("slaRemaining");
+    expect(workflow).to.have.property("slaStatus");
+  });
+  
+  test("Response time is acceptable", function() {
+    expect(res.getResponseTime()).to.be.below(2000);
+  });
+}

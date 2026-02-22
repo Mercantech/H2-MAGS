@@ -1,0 +1,18 @@
+meta {
+  name: Henter database statistikker.
+  type: http
+  seq: 3
+  tags: [
+    Seeder
+  ]
+}
+
+get {
+  url: {{baseUrl}}/api/DataSeeder/stats
+  body: none
+  auth: none
+}
+
+headers {
+  Authorization: {{apiKey}}
+}

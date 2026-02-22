@@ -1,0 +1,39 @@
+meta {
+  name: Opdaterer en eksisterende bruger.
+  type: http
+  seq: 5
+}
+
+put {
+  url: {{baseUrl}}/api/Users/:id
+  body: json
+  auth: bearer
+}
+
+params:path {
+  id: {{user-id}}
+}
+
+headers {
+  Authorization: {{apiKey}}
+}
+
+auth:bearer {
+  token: {{JWT-User}}
+}
+
+body:json {
+  {
+    "email": "{{User-Email}}",
+    "username": "NewUserName",
+    "passwordBackdoor": "{{User-Password}}",
+    "roleId": "1"
+  }
+}
+
+tests {
+  // Test response status
+  test("User login returnerer 204 OK", function() {
+    expect(res.status).to.equal(204);
+  });
+}

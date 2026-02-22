@@ -1,0 +1,1431 @@
+/* VacationStay Light Theme - ULTRA AGGRESSIVE LIGHT THEME OVERRIDE */
+
+/* Import Google Fonts */
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&family=Poppins:wght@300;400;500;600;700;800&display=swap');
+
+/* ULTRA NUCLEAR OPTION - FORCE LIGHT THEME ON ABSOLUTELY EVERYTHING */
+*, 
+*::before, 
+*::after {
+    color: #1c1917 !important;
+    background-color: transparent !important;
+}
+
+/* Exclude Bootstrap Icons from global background rules */
+i[class*="bi"],
+i[class*="bi"]::before,
+i[class*="bi"]::after,
+.bi,
+.bi::before,
+.bi::after {
+    background-color: transparent !important;
+    background: transparent !important;
+}
+
+/* FORCE LIGHT BACKGROUND ON BODY */
+body, html {
+    background: linear-gradient(135deg, #f0f9ff 0%, #e0f2fe 30%, #f0fdf4 100%) !important;
+    color: #1c1917 !important;
+}
+
+/* FORCE ALL CONTAINERS AND DIVS TO BE LIGHT */
+div, 
+section, 
+article, 
+main, 
+aside, 
+nav, 
+header, 
+footer {
+    background-color: transparent !important;
+    color: #1c1917 !important;
+}
+
+/* ULTRA AGGRESSIVE CARD STYLING */
+.card, 
+.card *:not([class*="bi"]):not(.bi), 
+.card *::before:not([class*="bi"]):not(.bi),
+.card *::after:not([class*="bi"]):not(.bi),
+div[class*="card"], 
+div[class*="card"] *:not([class*="bi"]):not(.bi),
+div[class*="card"] *::before:not([class*="bi"]):not(.bi),
+div[class*="card"] *::after:not([class*="bi"]):not(.bi),
+.vacation-search-card,
+.vacation-search-card *:not([class*="bi"]):not(.bi),
+.vacation-weather-card,
+.vacation-weather-card *:not([class*="bi"]):not(.bi),
+.vacation-status-card,
+.vacation-status-card *:not([class*="bi"]):not(.bi),
+.vacation-counter-card,
+.vacation-counter-card *:not([class*="bi"]):not(.bi),
+.vacation-profile-card,
+.vacation-profile-card *:not([class*="bi"]):not(.bi),
+.vacation-login-container,
+.vacation-login-container *:not([class*="bi"]):not(.bi) {
+    background: rgba(255, 255, 255, 0.95) !important;
+    background-color: rgba(255, 255, 255, 0.95) !important;
+    color: #1c1917 !important;
+    border-color: rgba(59, 130, 246, 0.2) !important;
+}
+
+/* FORCE ALL CARD HEADERS TO BE LIGHT */
+.card-header,
+.card-header *:not([class*="bi"]):not(.bi),
+div[class*="card"] .card-header,
+div[class*="card"] .card-header *:not([class*="bi"]):not(.bi),
+.vacation-header,
+.vacation-header *:not([class*="bi"]):not(.bi),
+.vacation-profile-header,
+.vacation-profile-header *:not([class*="bi"]):not(.bi),
+.vacation-counter-header,
+.vacation-counter-header *:not([class*="bi"]):not(.bi) {
+    background: linear-gradient(135deg, #e0f2fe, #f0fdf4) !important;
+    background-color: #e0f2fe !important;
+    color: #1c1917 !important;
+    border-bottom: 1px solid rgba(59, 130, 246, 0.2) !important;
+}
+
+/* FORCE ALL TEXT ELEMENTS TO BE DARK */
+p, p *,
+span, span *,
+div:not(.btn):not(.badge):not(.progress):not(.progress-bar), 
+div:not(.btn):not(.badge):not(.progress):not(.progress-bar) *,
+h1, h1 *, 
+h2, h2 *, 
+h3, h3 *, 
+h4, h4 *, 
+h5, h5 *, 
+h6, h6 *,
+td, td *, 
+th, th *, 
+label, label *, 
+small, small *, 
+strong, strong *, 
+em, em *,
+li, li *,
+a:not(.btn), a:not(.btn) *,
+i:not([class*="bi"]):not([class*="fa"]):not([class*="icon"]), 
+i:not([class*="bi"]):not([class*="fa"]):not([class*="icon"]) * {
+    color: #1c1917 !important;
+    background-color: transparent !important;
+}
+
+/* Ensure Bootstrap Icons are properly styled */
+i[class*="bi"] {
+    color: inherit !important;
+    background-color: transparent !important;
+    background: transparent !important;
+    font-family: "bootstrap-icons" !important;
+    font-style: normal !important;
+    font-variant: normal !important;
+    text-transform: none !important;
+    line-height: 1 !important;
+    -webkit-font-smoothing: antialiased !important;
+    -moz-osx-font-smoothing: grayscale !important;
+    display: inline-block !important;
+    width: auto !important;
+    height: auto !important;
+}
+
+/* Override the aggressive global background rule for Bootstrap Icons */
+i[class*="bi"]::before,
+i[class*="bi"]::after {
+    background-color: transparent !important;
+    background: transparent !important;
+}
+
+/* Force Bootstrap Icons to have transparent background regardless of parent rules */
+i[class*="bi"],
+i[class*="bi"] *,
+i[class*="bi"]::before,
+i[class*="bi"]::after {
+    background-color: transparent !important;
+    background: transparent !important;
+    box-shadow: none !important;
+}
+
+/* Ensure Bootstrap Icons are visible and properly sized */
+.bi {
+    background: transparent !important;
+    background-color: transparent !important;
+    font-family: "bootstrap-icons" !important;
+    font-style: normal !important;
+    font-variant: normal !important;
+    text-transform: none !important;
+    line-height: 1 !important;
+    -webkit-font-smoothing: antialiased !important;
+    -moz-osx-font-smoothing: grayscale !important;
+}
+
+/* Ensure Bootstrap Icons font loads correctly */
+@font-face {
+    font-family: "bootstrap-icons";
+    src: url("https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.1/font/fonts/bootstrap-icons.woff2") format("woff2"),
+         url("https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.1/font/fonts/bootstrap-icons.woff") format("woff");
+    font-display: swap;
+}
+
+/* Specific Bootstrap Icon color classes */
+i.bi.text-success {
+    color: #10b981 !important;
+}
+
+i.bi.text-primary {
+    color: #3b82f6 !important;
+}
+
+i.bi.text-warning {
+    color: #f59e0b !important;
+}
+
+i.bi.text-danger {
+    color: #ef4444 !important;
+}
+
+i.bi.text-info {
+    color: #06b6d4 !important;
+}
+
+/* Feature header icons */
+.feature-header i[class*="bi"],
+.hero-visual i[class*="bi"],
+.floating-card i[class*="bi"] {
+    color: inherit !important;
+    font-family: "bootstrap-icons" !important;
+    background: transparent !important;
+    background-color: transparent !important;
+}
+
+/* Card header icons */
+.card-header i[class*="bi"],
+.vacation-header i[class*="bi"],
+.vacation-profile-header i[class*="bi"],
+.vacation-counter-header i[class*="bi"] {
+    color: inherit !important;
+    font-family: "bootstrap-icons" !important;
+    background: transparent !important;
+    background-color: transparent !important;
+}
+
+/* Navigation menu icons */
+.nav-link i[class*="bi"],
+.navbar-text i[class*="bi"],
+.top-row i[class*="bi"] {
+    color: inherit !important;
+    font-family: "bootstrap-icons" !important;
+    margin-right: 0.5rem;
+    background: transparent !important;
+    background-color: transparent !important;
+}
+
+/* SPECIFIC OVERRIDES FOR PROBLEMATIC ELEMENTS */
+.card-title,
+.card-title * {
+    color: #1c1917 !important;
+    background: linear-gradient(135deg, #3b82f6, #10b981) !important;
+    -webkit-background-clip: text !important;
+    -webkit-text-fill-color: transparent !important;
+    background-clip: text !important;
+}
+
+/* Force all Bootstrap components to be light */
+.form-control,
+.form-control * {
+    background: rgba(255, 255, 255, 0.95) !important;
+    color: #1c1917 !important;
+    border: 2px solid rgba(59, 130, 246, 0.2) !important;
+}
+
+.btn:not(.btn-primary):not(.btn-success):not(.btn-danger):not(.btn-warning),
+.btn:not(.btn-primary):not(.btn-success):not(.btn-danger):not(.btn-warning) * {
+    background: rgba(255, 255, 255, 0.95) !important;
+    color: #1c1917 !important;
+    border: 2px solid rgba(59, 130, 246, 0.2) !important;
+}
+
+/* Progress bars and counters */
+.progress {
+    background: rgba(255, 255, 255, 0.5) !important;
+}
+
+.progress-bar {
+    background: linear-gradient(135deg, #3b82f6, #10b981) !important;
+}
+
+/* Counter specific styling */
+[class*="counter"] * {
+    color: #1c1917 !important;
+}
+
+/* Search form specific */
+[class*="search"] *,
+[class*="weather"] *,
+[class*="status"] * {
+    color: #1c1917 !important;
+    background-color: transparent !important;
+}
+
+/* ELIMINATE ALL BOOTSTRAP DARK CLASSES */
+.bg-dark,
+.bg-dark *,
+.bg-secondary,
+.bg-secondary *,
+.text-dark,
+.text-secondary,
+.text-muted,
+.navbar-dark,
+.navbar-dark *,
+.card-dark,
+.card-dark *,
+.table-dark,
+.table-dark *,
+.btn-dark,
+.btn-dark *,
+.btn-secondary,
+.btn-secondary *,
+.alert-dark,
+.alert-dark *,
+.badge-dark,
+.badge-dark *,
+.badge-secondary,
+.badge-secondary * {
+    background: rgba(255, 255, 255, 0.95) !important;
+    background-color: rgba(255, 255, 255, 0.95) !important;
+    color: #1c1917 !important;
+    border-color: rgba(59, 130, 246, 0.2) !important;
+}
+
+/* FORCE WHITE BACKGROUND ON ALL CARDS AND CONTAINERS */
+.container,
+.container *,
+.container-fluid,
+.container-fluid *,
+.row,
+.row *,
+.col,
+.col *,
+[class*="col-"],
+[class*="col-"] * {
+    background-color: transparent !important;
+    color: #1c1917 !important;
+}
+
+/* SPECIFIC BOOTSTRAP UTILITY OVERRIDES */
+.border-primary {
+    border-color: rgba(59, 130, 246, 0.3) !important;
+}
+
+.shadow-sm,
+.shadow,
+.shadow-lg {
+    box-shadow: 0 4px 20px rgba(59, 130, 246, 0.1) !important;
+}
+
+/* FORCE BOOTSTRAP FORM ELEMENTS TO BE LIGHT */
+.form-select,
+.form-select *,
+.form-control,
+.form-control *,
+input[type="text"],
+input[type="email"], 
+input[type="password"],
+input[type="number"],
+input[type="date"],
+select,
+textarea {
+    background: rgba(255, 255, 255, 0.95) !important;
+    background-color: rgba(255, 255, 255, 0.95) !important;
+    color: #1c1917 !important;
+    border: 2px solid rgba(59, 130, 246, 0.2) !important;
+}
+
+.form-select:focus,
+.form-control:focus,
+input:focus,
+select:focus,
+textarea:focus {
+    background: rgba(255, 255, 255, 1) !important;
+    background-color: rgba(255, 255, 255, 1) !important;
+    color: #1c1917 !important;
+    border-color: #3b82f6 !important;
+    box-shadow: 0 0 0 4px rgba(59, 130, 246, 0.1) !important;
+}
+
+/* FORCE BOOTSTRAP BADGE COLORS */
+.badge.bg-primary {
+    background: linear-gradient(135deg, #3b82f6, #10b981) !important;
+    color: white !important;
+}
+
+.badge.bg-success {
+    background: linear-gradient(135deg, #10b981, #f97316) !important;
+    color: white !important;
+}
+
+/* FORCE BOOTSTRAP PROGRESS BARS */
+.progress {
+    background: rgba(255, 255, 255, 0.7) !important;
+    border: 1px solid rgba(59, 130, 246, 0.2) !important;
+}
+
+.progress-bar,
+.progress-bar.bg-success {
+    background: linear-gradient(135deg, #3b82f6, #10b981) !important;
+}
+
+/* FORCE BOOTSTRAP BUTTONS */
+.btn {
+    border-radius: 12px !important;
+    font-weight: 600 !important;
+    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1) !important;
+}
+
+.btn-primary {
+    background: linear-gradient(135deg, #3b82f6, #10b981) !important;
+    border: none !important;
+    color: white !important;
+    box-shadow: 0 4px 15px rgba(59, 130, 246, 0.4) !important;
+}
+
+.btn-primary:hover {
+    background: linear-gradient(135deg, #2563eb, #059669) !important;
+    transform: translateY(-2px) !important;
+    box-shadow: 0 8px 25px rgba(59, 130, 246, 0.6) !important;
+}
+
+/* FORCE ALL DISPLAY UTILITIES */
+.d-flex,
+.d-flex *,
+.d-block,
+.d-block *,
+.d-inline,
+.d-inline * {
+    color: #1c1917 !important;
+}
+
+/* FORCE ALL ALIGNMENT UTILITIES */
+.align-items-center,
+.align-items-center *,
+.justify-content-between,
+.justify-content-between *,
+.text-center,
+.text-center *,
+.text-start,
+.text-start *,
+.text-end,
+.text-end * {
+    color: #1c1917 !important;
+}
+
+/* CSS Custom Properties (Variables) - Light Vacation Theme */
+:root {
+    /* Primary Colors - Ocean Blues */
+    --primary-50: #eff6ff;
+    --primary-100: #dbeafe;
+    --primary-200: #bfdbfe;
+    --primary-300: #93c5fd;
+    --primary-400: #60a5fa;
+    --primary-500: #3b82f6;
+    --primary-600: #2563eb;
+    --primary-700: #1d4ed8;
+    --primary-800: #1e40af;
+    --primary-900: #1e3a8a;
+
+    /* Secondary Colors - Sunset Orange */
+    --secondary-50: #fff7ed;
+    --secondary-100: #ffedd5;
+    --secondary-200: #fed7aa;
+    --secondary-300: #fdba74;
+    --secondary-400: #fb923c;
+    --secondary-500: #f97316;
+    --secondary-600: #ea580c;
+    --secondary-700: #c2410c;
+    --secondary-800: #9a3412;
+    --secondary-900: #7c2d12;
+
+    /* Accent Colors - Tropical Green */
+    --accent-50: #ecfdf5;
+    --accent-100: #d1fae5;
+    --accent-200: #a7f3d0;
+    --accent-300: #6ee7b7;
+    --accent-400: #34d399;
+    --accent-500: #10b981;
+    --accent-600: #059669;
+    --accent-700: #047857;
+    --accent-800: #065f46;
+    --accent-900: #064e3b;
+
+    /* Status Colors */
+    --success-500: #10b981;
+    --success-600: #059669;
+    --warning-500: #f59e0b;
+    --warning-600: #d97706;
+    --error-500: #ef4444;
+    --error-600: #dc2626;
+
+    /* Gray Scale - Warm Grays */
+    --gray-50: #fafaf9;
+    --gray-100: #f5f5f4;
+    --gray-200: #e7e5e4;
+    --gray-300: #d6d3d1;
+    --gray-400: #a8a29e;
+    --gray-500: #78716c;
+    --gray-600: #57534e;
+    --gray-700: #44403c;
+    --gray-800: #292524;
+    --gray-900: #1c1917;
+
+    /* Light Theme Colors */
+    --light-bg-primary: #ffffff;
+    --light-bg-secondary: #fafaf9;
+    --light-bg-tertiary: #f5f5f4;
+    --light-bg-card: rgba(255, 255, 255, 0.95);
+    --light-text-primary: #1c1917;
+    --light-text-secondary: #44403c;
+    --light-text-muted: #78716c;
+
+    /* Vacation Gradients */
+    --gradient-ocean: linear-gradient(135deg, #3b82f6, #06b6d4, #10b981);
+    --gradient-sunset: linear-gradient(135deg, #f97316, #f59e0b, #eab308);
+    --gradient-sky: linear-gradient(135deg, #dbeafe, #bfdbfe, #93c5fd);
+    --gradient-beach: linear-gradient(135deg, #fef3c7, #fed7aa, #fdba74);
+
+    /* Shadows - Softer for light theme */
+    --shadow-sm: 0 1px 2px 0 rgba(0, 0, 0, 0.05);
+    --shadow-md: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
+    --shadow-lg: 0 10px 15px -3px rgba(0, 0, 0, 0.1);
+    --shadow-xl: 0 20px 25px -5px rgba(0, 0, 0, 0.1);
+    --shadow-2xl: 0 25px 50px -12px rgba(0, 0, 0, 0.15);
+
+    /* Card shadows */
+    --shadow-card: 0 4px 20px rgba(59, 130, 246, 0.1);
+    --shadow-card-hover: 0 8px 30px rgba(59, 130, 246, 0.15);
+
+    /* Border Radius */
+    --radius-sm: 6px;
+    --radius-md: 8px;
+    --radius-lg: 12px;
+    --radius-xl: 16px;
+    --radius-2xl: 20px;
+    --radius-full: 9999px;
+
+    /* Spacing */
+    --space-xs: 0.25rem;
+    --space-sm: 0.5rem;
+    --space-md: 1rem;
+    --space-lg: 1.5rem;
+    --space-xl: 2rem;
+    --space-2xl: 3rem;
+    --space-3xl: 4rem;
+
+    /* Typography */
+    --font-family-primary: 'Poppins', 'Inter', 'Segoe UI', system-ui, sans-serif;
+    --font-size-xs: 0.75rem;
+    --font-size-sm: 0.875rem;
+    --font-size-base: 1rem;
+    --font-size-lg: 1.125rem;
+    --font-size-xl: 1.25rem;
+    --font-size-2xl: 1.5rem;
+    --font-size-3xl: 1.875rem;
+    --font-size-4xl: 2.25rem;
+    --font-size-5xl: 3rem;
+
+    /* Transitions */
+    --transition-fast: 0.15s cubic-bezier(0.4, 0, 0.2, 1);
+    --transition-normal: 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    --transition-slow: 0.5s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+/* Global Reset & Base Styles */
+* {
+    box-sizing: border-box;
+}
+
+html {
+    scroll-behavior: smooth;
+    -webkit-text-size-adjust: 100%;
+}
+
+body {
+    font-family: var(--font-family-primary);
+    color: var(--light-text-primary);
+    background: var(--light-bg-secondary);
+    line-height: 1.6;
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+    margin: 0;
+    padding: 0;
+}
+
+/* Typography Improvements */
+h1, h2, h3, h4, h5, h6 {
+    font-weight: 700;
+    line-height: 1.2;
+    margin-bottom: var(--space-md);
+    color: var(--light-text-primary);
+}
+
+h1 { 
+    font-size: var(--font-size-4xl); 
+    font-weight: 800;
+}
+h2 { 
+    font-size: var(--font-size-3xl); 
+    font-weight: 700;
+}
+h3 { 
+    font-size: var(--font-size-2xl); 
+    font-weight: 600;
+}
+h4 { 
+    font-size: var(--font-size-xl); 
+    font-weight: 600;
+}
+h5 { 
+    font-size: var(--font-size-lg); 
+    font-weight: 600;
+}
+h6 { 
+    font-size: var(--font-size-base); 
+    font-weight: 600;
+}
+
+p {
+    margin-bottom: var(--space-md);
+    color: var(--light-text-secondary);
+    font-weight: 400;
+}
+
+/* Enhanced Form Controls */
+.form-control, .form-select {
+    background: var(--light-bg-primary);
+    border: 2px solid var(--gray-200);
+    border-radius: var(--radius-lg);
+    color: var(--light-text-primary);
+    font-size: var(--font-size-base);
+    padding: var(--space-md) var(--space-lg);
+    transition: all var(--transition-normal);
+    font-weight: 500;
+}
+
+.form-control:focus, .form-select:focus {
+    background: var(--light-bg-primary);
+    border-color: var(--primary-500);
+    box-shadow: 0 0 0 4px rgba(59, 130, 246, 0.1);
+    color: var(--light-text-primary);
+    outline: none;
+}
+
+.form-control::placeholder {
+    color: var(--light-text-muted);
+    font-weight: 400;
+}
+
+.form-label {
+    font-weight: 600;
+    color: var(--light-text-primary);
+    font-size: var(--font-size-sm);
+    margin-bottom: var(--space-sm);
+    display: block;
+}
+
+/* Enhanced Button Styles - Booking.com Style */
+.btn {
+    border-radius: var(--radius-lg);
+    font-weight: 600;
+    padding: var(--space-md) var(--space-xl);
+    font-size: var(--font-size-base);
+    transition: all var(--transition-normal);
+    border: 2px solid transparent;
+    position: relative;
+    overflow: hidden;
+    text-decoration: none;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: var(--space-sm);
+    cursor: pointer;
+    font-family: var(--font-family-primary);
+}
+
+.btn-primary {
+    background: var(--gradient-ocean);
+    color: white;
+    box-shadow: var(--shadow-md);
+    border: 2px solid transparent;
+}
+
+.btn-primary:hover:not(:disabled) {
+    transform: translateY(-2px);
+    box-shadow: var(--shadow-lg);
+    color: white;
+}
+
+.btn-secondary {
+    background: var(--light-bg-primary);
+    color: var(--primary-600);
+    border: 2px solid var(--primary-200);
+    box-shadow: var(--shadow-sm);
+}
+
+.btn-secondary:hover:not(:disabled) {
+    background: var(--primary-50);
+    border-color: var(--primary-300);
+    transform: translateY(-1px);
+    color: var(--primary-700);
+}
+
+.btn-success {
+    background: var(--gradient-ocean);
+    color: white;
+    box-shadow: var(--shadow-md);
+}
+
+.btn-success:hover:not(:disabled) {
+    transform: translateY(-2px);
+    box-shadow: var(--shadow-lg);
+    color: white;
+}
+
+.btn-warning {
+    background: var(--gradient-sunset);
+    color: white;
+    box-shadow: var(--shadow-md);
+}
+
+.btn-warning:hover:not(:disabled) {
+    transform: translateY(-2px);
+    box-shadow: var(--shadow-lg);
+    color: white;
+}
+
+.btn-danger {
+    background: linear-gradient(135deg, var(--error-500), var(--error-600));
+    color: white;
+    box-shadow: var(--shadow-md);
+}
+
+.btn-danger:hover:not(:disabled) {
+    transform: translateY(-2px);
+    box-shadow: var(--shadow-lg);
+    color: white;
+}
+
+.btn-outline-primary {
+    background: transparent;
+    color: var(--primary-600);
+    border: 2px solid var(--primary-300);
+}
+
+.btn-outline-primary:hover:not(:disabled) {
+    background: var(--primary-500);
+    color: white;
+    border-color: var(--primary-500);
+    transform: translateY(-1px);
+}
+
+.btn:disabled {
+    background: var(--gray-200);
+    color: var(--gray-500);
+    cursor: not-allowed;
+    transform: none;
+    box-shadow: none;
+}
+
+/* Enhanced Card Styles - Booking.com Style */
+.card {
+    background: var(--light-bg-card);
+    border: 1px solid var(--gray-200);
+    border-radius: var(--radius-2xl);
+    box-shadow: var(--shadow-card);
+    transition: all var(--transition-normal);
+    overflow: hidden;
+    color: var(--light-text-primary);
+}
+
+.card:hover {
+    transform: translateY(-4px);
+    box-shadow: var(--shadow-card-hover);
+    border-color: var(--primary-200);
+}
+
+.card-header {
+    background: var(--gradient-sky);
+    border-bottom: 1px solid var(--gray-200);
+    border-radius: var(--radius-2xl) var(--radius-2xl) 0 0;
+    padding: var(--space-xl);
+    color: var(--light-text-primary);
+}
+
+.card-body {
+    padding: var(--space-xl);
+    background: transparent;
+    color: var(--light-text-primary);
+}
+
+.card-title {
+    color: var(--light-text-primary);
+    font-weight: 700;
+    margin-bottom: var(--space-md);
+    font-size: var(--font-size-lg);
+}
+
+.card-text {
+    color: var(--light-text-secondary);
+}
+
+/* Enhanced Table Styles */
+.table {
+    color: var(--light-text-primary);
+    background: transparent;
+    --bs-table-bg: transparent;
+    --bs-table-striped-bg: var(--primary-50);
+    --bs-table-hover-bg: var(--primary-100);
+    --bs-table-border-color: var(--gray-200);
+}
+
+.table th {
+    color: var(--light-text-primary);
+    background: var(--gradient-sky);
+    border-bottom: 2px solid var(--primary-200);
+    font-weight: 700;
+    font-size: var(--font-size-sm);
+    padding: var(--space-lg);
+}
+
+.table td {
+    color: var(--light-text-secondary);
+    border-bottom: 1px solid var(--gray-200);
+    padding: var(--space-lg);
+    vertical-align: middle;
+    font-weight: 500;
+}
+
+.table-striped > tbody > tr:nth-of-type(odd) > td {
+    background: var(--primary-50);
+}
+
+.table-hover > tbody > tr:hover > td {
+    background: var(--primary-100);
+}
+
+.table-responsive {
+    border-radius: var(--radius-lg);
+    overflow: hidden;
+    box-shadow: var(--shadow-sm);
+}
+
+/* Enhanced Form Select */
+.form-select {
+    background: var(--light-bg-primary) url("data:image/svg+xml,%3csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16'%3e%3cpath fill='none' stroke='%233b82f6' stroke-linecap='round' stroke-linejoin='round' stroke-width='2' d='m1 6 7 7 7-7'/%3e%3c/svg%3e") no-repeat right 0.75rem center/16px 12px;
+    border: 2px solid var(--gray-200);
+    border-radius: var(--radius-lg);
+    color: var(--light-text-primary);
+    font-size: var(--font-size-base);
+    padding: var(--space-md) var(--space-lg);
+    transition: all var(--transition-normal);
+    font-weight: 500;
+}
+
+.form-select:focus {
+    background: var(--light-bg-primary) url("data:image/svg+xml,%3csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16'%3e%3cpath fill='none' stroke='%232563eb' stroke-linecap='round' stroke-linejoin='round' stroke-width='2' d='m1 6 7 7 7-7'/%3e%3c/svg%3e") no-repeat right 0.75rem center/16px 12px;
+    border-color: var(--primary-500);
+    box-shadow: 0 0 0 4px rgba(59, 130, 246, 0.1);
+    color: var(--light-text-primary);
+    outline: none;
+}
+
+.form-select option {
+    background: var(--light-bg-primary);
+    color: var(--light-text-primary);
+}
+
+/* Enhanced Alert Styles */
+.alert {
+    border-radius: var(--radius-xl);
+    border: 1px solid;
+    padding: var(--space-lg) var(--space-xl);
+    margin-bottom: var(--space-lg);
+    font-weight: 500;
+}
+
+.alert-primary {
+    background: var(--primary-50);
+    color: var(--primary-800);
+    border-color: var(--primary-200);
+}
+
+.alert-success {
+    background: var(--accent-50);
+    color: var(--accent-800);
+    border-color: var(--accent-200);
+}
+
+.alert-warning {
+    background: var(--secondary-50);
+    color: var(--secondary-800);
+    border-color: var(--secondary-200);
+}
+
+.alert-danger {
+    background: #fef2f2;
+    color: #991b1b;
+    border-color: #fecaca;
+}
+
+.alert-info {
+    background: var(--primary-50);
+    color: var(--primary-800);
+    border-color: var(--primary-200);
+}
+
+/* Enhanced Badge Styles */
+.badge {
+    font-size: var(--font-size-xs);
+    padding: var(--space-sm) var(--space-md);
+    border-radius: var(--radius-full);
+    font-weight: 600;
+    box-shadow: var(--shadow-sm);
+    transition: all var(--transition-normal);
+}
+
+.badge:hover {
+    transform: translateY(-1px);
+    box-shadow: var(--shadow-md);
+}
+
+.bg-primary { 
+    background: var(--primary-500) !important; 
+    color: white !important;
+}
+
+.bg-secondary { 
+    background: var(--gray-500) !important; 
+    color: white !important;
+}
+
+.bg-success { 
+    background: var(--success-500) !important; 
+    color: white !important;
+}
+
+.bg-warning { 
+    background: var(--warning-500) !important; 
+    color: white !important;
+}
+
+.bg-danger { 
+    background: var(--error-500) !important; 
+    color: white !important;
+}
+
+.bg-info { 
+    background: var(--primary-500) !important; 
+    color: white !important;
+}
+
+/* Text Colors */
+.text-primary { color: var(--primary-600) !important; }
+.text-secondary { color: var(--light-text-secondary) !important; }
+.text-success { color: var(--success-600) !important; }
+.text-warning { color: var(--warning-600) !important; }
+.text-danger { color: var(--error-600) !important; }
+.text-info { color: var(--primary-600) !important; }
+.text-light { color: var(--gray-100) !important; }
+.text-dark { color: var(--light-text-primary) !important; }
+.text-muted { color: var(--light-text-muted) !important; }
+
+/* Border Colors */
+.border-primary { border-color: var(--primary-300) !important; }
+.border-secondary { border-color: var(--gray-300) !important; }
+.border-success { border-color: var(--success-300) !important; }
+.border-warning { border-color: var(--warning-300) !important; }
+.border-danger { border-color: var(--error-300) !important; }
+.border-info { border-color: var(--primary-300) !important; }
+
+/* Progress Bar Styles */
+.progress {
+    background: var(--gray-200);
+    border-radius: var(--radius-full);
+    height: 0.75rem;
+    overflow: hidden;
+}
+
+.progress-bar {
+    background: var(--gradient-ocean);
+    border-radius: var(--radius-full);
+    transition: width 0.6s ease;
+}
+
+.progress-bar.bg-success {
+    background: var(--gradient-ocean) !important;
+}
+
+.progress-bar.bg-primary {
+    background: var(--gradient-ocean) !important;
+}
+
+.progress-bar.bg-warning {
+    background: var(--gradient-sunset) !important;
+}
+
+.progress-bar.bg-danger {
+    background: linear-gradient(135deg, var(--error-500), var(--error-600)) !important;
+}
+
+/* Loading States */
+.spinner-border {
+    border-width: 0.2em;
+    border-color: rgba(59, 130, 246, 0.3);
+    border-right-color: var(--primary-500);
+}
+
+/* Scrollbar Styling */
+::-webkit-scrollbar {
+    width: 8px;
+    height: 8px;
+}
+
+::-webkit-scrollbar-track {
+    background: var(--gray-100);
+    border-radius: var(--radius-sm);
+}
+
+::-webkit-scrollbar-thumb {
+    background: var(--primary-300);
+    border-radius: var(--radius-sm);
+    transition: background var(--transition-normal);
+}
+
+::-webkit-scrollbar-thumb:hover {
+    background: var(--primary-500);
+}
+
+/* Utility Classes */
+.text-gradient {
+    background: var(--gradient-ocean);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+}
+
+.vacation-gradient {
+    background: var(--gradient-sunset);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+}
+
+.shadow-vacation {
+    box-shadow: 0 10px 40px rgba(59, 130, 246, 0.15);
+}
+
+.hover-lift {
+    transition: transform var(--transition-normal);
+}
+
+.hover-lift:hover {
+    transform: translateY(-4px);
+}
+
+/* Animations */
+@keyframes fadeIn {
+    from {
+        opacity: 0;
+    }
+    to {
+        opacity: 1;
+    }
+}
+
+@keyframes slideUp {
+    from {
+        opacity: 0;
+        transform: translateY(30px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+@keyframes bounce {
+    0%, 20%, 53%, 80%, 100% {
+        transform: translateY(0);
+    }
+    40%, 43% {
+        transform: translateY(-10px);
+    }
+    70% {
+        transform: translateY(-5px);
+    }
+    90% {
+        transform: translateY(-2px);
+    }
+}
+
+.fade-in {
+    animation: fadeIn 0.8s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.slide-up {
+    animation: slideUp 0.8s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.bounce {
+    animation: bounce 2s infinite;
+}
+
+/* FORCE LIGHT THEME - Override Bootstrap Dark Components */
+
+/* Global Card Override */
+.card, 
+.vacation-search-card,
+.vacation-weather-card,
+.vacation-status-card,
+.vacation-counter-card,
+.vacation-profile-card,
+.vacation-login-container .card {
+    background: rgba(255, 255, 255, 0.95) !important;
+    border: 1px solid rgba(59, 130, 246, 0.2) !important;
+    box-shadow: 0 8px 32px rgba(59, 130, 246, 0.1) !important;
+    color: #1c1917 !important;
+}
+
+/* Card Headers */
+.card-header,
+.vacation-header,
+.vacation-profile-header,
+.vacation-counter-header {
+    background: linear-gradient(135deg, #e0f2fe, #f0fdf4) !important;
+    border-bottom: 1px solid rgba(59, 130, 246, 0.2) !important;
+    color: #1c1917 !important;
+}
+
+/* Card Bodies */
+.card-body {
+    background: transparent !important;
+    color: #1c1917 !important;
+}
+
+/* Ensure Bootstrap Icons in card bodies have transparent background */
+.card-body i[class*="bi"],
+.card-body .bi {
+    background: transparent !important;
+    background-color: transparent !important;
+}
+
+/* All Card Titles */
+.card-title,
+.vacation-search-title,
+.vacation-weather-title,
+.vacation-status-title,
+.vacation-counter-header .card-title,
+.vacation-profile-header h4 {
+    color: #1c1917 !important;
+    font-weight: 700 !important;
+    background: linear-gradient(135deg, #3b82f6, #10b981) !important;
+    -webkit-background-clip: text !important;
+    -webkit-text-fill-color: transparent !important;
+    background-clip: text !important;
+}
+
+/* Ensure Bootstrap Icons in card titles have transparent background */
+.card-title i[class*="bi"],
+.card-title .bi,
+.vacation-search-title i[class*="bi"],
+.vacation-search-title .bi,
+.vacation-weather-title i[class*="bi"],
+.vacation-weather-title .bi,
+.vacation-status-title i[class*="bi"],
+.vacation-status-title .bi {
+    background: transparent !important;
+    background-color: transparent !important;
+    -webkit-background-clip: unset !important;
+    -webkit-text-fill-color: unset !important;
+    background-clip: unset !important;
+}
+
+/* Card Text */
+.card-text {
+    color: #6b7280 !important;
+}
+
+/* Vacation Search Card */
+.vacation-search-card {
+    background: rgba(255, 255, 255, 0.95) !important;
+    border: 1px solid rgba(59, 130, 246, 0.2) !important;
+    box-shadow: 0 8px 32px rgba(59, 130, 246, 0.1) !important;
+}
+
+.vacation-search-title {
+    color: #1c1917;
+    font-weight: 700;
+    background: linear-gradient(135deg, #3b82f6, #10b981);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+}
+
+/* Vacation Weather Card */
+.vacation-weather-card {
+    background: rgba(255, 255, 255, 0.95);
+    border: 1px solid rgba(249, 115, 22, 0.2);
+    box-shadow: 0 8px 32px rgba(249, 115, 22, 0.1);
+}
+
+.vacation-weather-title {
+    color: #1c1917;
+    font-weight: 700;
+    background: linear-gradient(135deg, #f97316, #eab308);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+}
+
+/* Vacation Status Card */
+.vacation-status-card {
+    background: rgba(255, 255, 255, 0.95);
+    border: 1px solid rgba(16, 185, 129, 0.2);
+    box-shadow: 0 8px 32px rgba(16, 185, 129, 0.1);
+}
+
+.vacation-status-title {
+    color: #1c1917;
+    font-weight: 700;
+    background: linear-gradient(135deg, #10b981, #059669);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+}
+
+/* Vacation Counter Card */
+.vacation-counter-card {
+    background: rgba(255, 255, 255, 0.95);
+    border: 1px solid rgba(59, 130, 246, 0.2);
+    box-shadow: 0 8px 32px rgba(59, 130, 246, 0.1);
+}
+
+.vacation-counter-header {
+    background: linear-gradient(135deg, #e0f2fe, #f0fdf4);
+    border-bottom: 1px solid rgba(59, 130, 246, 0.2);
+}
+
+.vacation-counter-header .card-title {
+    color: #1c1917;
+    font-weight: 700;
+    background: linear-gradient(135deg, #3b82f6, #10b981);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+}
+
+/* FORCE ALL TEXT TO BE VISIBLE */
+.card *:not([class*="bi"]):not(.bi),
+.vacation-search-card *:not([class*="bi"]):not(.bi),
+.vacation-weather-card *:not([class*="bi"]):not(.bi),
+.vacation-status-card *:not([class*="bi"]):not(.bi),
+.vacation-counter-card *:not([class*="bi"]):not(.bi),
+.vacation-profile-card *:not([class*="bi"]):not(.bi),
+.vacation-login-container *:not([class*="bi"]):not(.bi) {
+    color: #1c1917 !important;
+}
+
+/* Specific text elements */
+.card p,
+.card span,
+.card div:not(.btn):not(.badge):not(.progress):not(.progress-bar),
+.card td,
+.card th,
+.card label,
+.card small,
+.card strong {
+    color: #1c1917 !important;
+}
+
+/* Ensure Bootstrap Icons in specific text elements have transparent background */
+.card p i[class*="bi"],
+.card span i[class*="bi"],
+.card div i[class*="bi"],
+.card td i[class*="bi"],
+.card th i[class*="bi"],
+.card label i[class*="bi"],
+.card small i[class*="bi"],
+.card strong i[class*="bi"] {
+    background: transparent !important;
+    background-color: transparent !important;
+}
+
+/* Form elements */
+.form-control,
+.form-select {
+    background: rgba(255, 255, 255, 0.9) !important;
+    border: 2px solid rgba(59, 130, 246, 0.2) !important;
+    color: #1c1917 !important;
+}
+
+/* Ensure Bootstrap Icons in form elements have transparent background */
+.form-control i[class*="bi"],
+.form-select i[class*="bi"] {
+    background: transparent !important;
+    background-color: transparent !important;
+}
+
+.form-control:focus,
+.form-select:focus {
+    background: rgba(255, 255, 255, 1) !important;
+    border-color: #3b82f6 !important;
+    color: #1c1917 !important;
+    box-shadow: 0 0 0 4px rgba(59, 130, 246, 0.1) !important;
+}
+
+.form-control::placeholder {
+    color: #6b7280 !important;
+}
+
+.form-label {
+    color: #1c1917 !important;
+    font-weight: 600 !important;
+}
+
+/* Tables */
+.table {
+    color: #1c1917 !important;
+    background: transparent !important;
+}
+
+/* Ensure Bootstrap Icons in tables have transparent background */
+.table i[class*="bi"],
+.table .bi {
+    background: transparent !important;
+    background-color: transparent !important;
+}
+
+.table th {
+    color: #1c1917 !important;
+    background: linear-gradient(135deg, #e0f2fe, #f0fdf4) !important;
+    border-bottom: 2px solid rgba(59, 130, 246, 0.2) !important;
+}
+
+.table td {
+    color: #1c1917 !important;
+    border-bottom: 1px solid rgba(59, 130, 246, 0.1) !important;
+}
+
+.table-striped > tbody > tr:nth-of-type(odd) > td {
+    background: rgba(59, 130, 246, 0.05) !important;
+}
+
+/* Badges */
+.badge {
+    color: white !important;
+}
+
+/* Ensure Bootstrap Icons in badges have transparent background */
+.badge i[class*="bi"],
+.badge .bi {
+    background: transparent !important;
+    background-color: transparent !important;
+}
+
+.bg-primary { background-color: #3b82f6 !important; color: white !important; }
+.bg-success { background-color: #10b981 !important; color: white !important; }
+.bg-warning { background-color: #f59e0b !important; color: white !important; }
+.bg-danger { background-color: #ef4444 !important; color: white !important; }
+.bg-info { background-color: #06b6d4 !important; color: white !important; }
+
+/* Buttons */
+.btn-primary {
+    background: linear-gradient(135deg, #3b82f6, #10b981) !important;
+    border: none !important;
+    color: white !important;
+}
+
+.btn-success {
+    background: linear-gradient(135deg, #10b981, #f97316) !important;
+    border: none !important;
+    color: white !important;
+}
+
+.btn-outline-danger {
+    border: 2px solid #ef4444 !important;
+    color: #ef4444 !important;
+    background: transparent !important;
+}
+
+.btn-outline-danger:hover {
+    background: #ef4444 !important;
+    color: white !important;
+}
+
+/* Alerts */
+.alert {
+    border-radius: 16px !important;
+    border: none !important;
+    padding: 1.25rem 1.5rem !important;
+    margin-bottom: 2rem !important;
+    font-weight: 500 !important;
+}
+
+.alert-danger {
+    background: rgba(239, 68, 68, 0.1) !important;
+    color: #dc2626 !important;
+    border: 1px solid rgba(239, 68, 68, 0.2) !important;
+}
+
+.alert-success {
+    background: rgba(16, 185, 129, 0.1) !important;
+    color: #047857 !important;
+    border: 1px solid rgba(16, 185, 129, 0.2) !important;
+}
+
+/* Text utilities */
+.text-muted {
+    color: #6b7280 !important;
+}
+
+.text-primary {
+    color: #3b82f6 !important;
+}
+
+.text-success {
+    color: #10b981 !important;
+}
+
+.text-warning {
+    color: #f59e0b !important;
+}
+
+.text-danger {
+    color: #ef4444 !important;
+}
+
+/* All vacation cards hover effect */
+.vacation-search-card:hover,
+.vacation-weather-card:hover,
+.vacation-status-card:hover,
+.vacation-counter-card:hover,
+.card:hover {
+    transform: translateY(-4px);
+    box-shadow: 0 12px 40px rgba(59, 130, 246, 0.15);
+}
+
+/* Responsive Design */
+@media (max-width: 640px) {
+    :root {
+        --font-size-4xl: 2rem;
+        --font-size-3xl: 1.5rem;
+        --space-xl: 1.5rem;
+        --space-2xl: 2rem;
+    }
+    
+    .btn {
+        padding: var(--space-sm) var(--space-lg);
+        font-size: var(--font-size-sm);
+    }
+    
+    .card-header,
+    .card-body {
+        padding: var(--space-lg);
+    }
+}

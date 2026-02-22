@@ -1,0 +1,61 @@
+meta {
+  name: Admin/Me
+  type: http
+  seq: 8
+}
+
+get {
+  url: {{baseUrl}}/api/Users/me
+  body: none
+  auth: bearer
+}
+
+headers {
+  Authorization: {{apiKey}}
+}
+
+auth:bearer {
+  token: {{JWT-Admin}}
+}
+
+tests {
+  // Test status kode
+  test("Status kode skal være 200 OK", function() {
+    expect(res.status).to.equal(200);
+  });
+  
+  // Test at brugeren er en Admin
+  test("Brugeren skal have Admin rolle", function() {
+    expect(res.body.role).to.equal("Admin");
+  });
+  
+  // Test at alle påkrævede felter er til stede
+  test("Bruger objekt skal have alle påkrævede felter", function() {
+    expect(res.body).to.have.property("id");
+    expect(res.body).to.have.property("email");
+    expect(res.body).to.have.property("username");
+    expect(res.body).to.have.property("role");
+    expect(res.body).to.have.property("roleDescription");
+  });
+  
+  // Test at email er korrekt
+  test("Email skal være mags@mercantec.dk", function() {
+    expect(res.body.email).to.equal("mags@mercantec.dk");
+  });
+  
+  // Test at username er korrekt
+  test("Username skal være MAGS", function() {
+    expect(res.body.username).to.equal("MAGS");
+  });
+  
+  // Test at roleDescription er korrekt
+  test("Role description skal være korrekt", function() {
+    expect(res.body.roleDescription).to.equal("Administrator med fuld adgang til systemet");
+  });
+  
+  // Test at ID er et gyldigt UUID
+  test("User ID skal være et gyldigt UUID", function() {
+    const uuidRegex = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+    expect(res.body.id).to.match(uuidRegex);
+  });
+}

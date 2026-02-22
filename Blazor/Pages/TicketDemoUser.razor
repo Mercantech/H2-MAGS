@@ -1,0 +1,517 @@
+@page "/ticket-demo-user"
+@using Blazor.Services
+@using DomainModels
+@using Blazor.Components
+@inject TicketSignalRService SignalRService
+@inject APIService APIService
+@inject AuthenticationService AuthService
+@inject ILogger<TicketDemoUser> Logger
+
+<PageTitle>Ticket Demo - Bruger</PageTitle>
+
+<div class="demo-container">
+    <div class="demo-header">
+        <h1>🎫 Ticket System Demo - Bruger Side</h1>
+        <p class="demo-description">
+            Dette er en demo af ticket systemet fra brugerens perspektiv. 
+            Du kan oprette tickets og chatte live med support medarbejdere.
+        </p>
+    </div>
+
+    <div class="demo-content">
+        @if (string.IsNullOrEmpty(currentTicketId))
+        {
+            <div class="ticket-section">
+                <div class="ticket-creation-section">
+                    <h3>Opret Nyt Ticket</h3>
+                    <TicketCreation 
+                        UserId="@demoUserId" 
+                        Username="@demoUsername"
+                        OnTicketCreated="OnTicketCreated" />
+                </div>
+
+                <div class="existing-tickets-section">
+                    <h3>Mine Eksisterende Tickets</h3>
+                    @if (isLoadingTickets)
+                    {
+                        <div class="loading">Henter tickets...</div>
+                    }
+                    else if (existingTickets?.Any() == true)
+                    {
+                        <div class="tickets-list">
+                            @foreach (var ticket in existingTickets)
+                            {
+                                <div class="ticket-card @GetStatusClass(ticket.Status)">
+                                    <div class="ticket-header">
+                                        <h4>@ticket.TicketNumber</h4>
+                                        <span class="status-badge">@ticket.Status</span>
+                                    </div>
+                                    <div class="ticket-content">
+                                        <h5>@ticket.Title</h5>
+                                        <p class="ticket-description">@ticket.Description</p>
+                                        <div class="ticket-meta">
+                                            <span class="priority @ticket.Priority.ToLower()">@ticket.Priority</span>
+                                            <span class="service-type">@ticket.ServiceType</span>
+                                            <span class="created-date">Oprettet: @ticket.CreatedAt.ToString("dd/MM/yyyy HH:mm")</span>
+                                        </div>
+                                    </div>
+                                    <div class="ticket-actions">
+                                        <button class="btn btn-primary" @onclick="() => JoinTicketChat(ticket.Id, ticket.TicketNumber)">
+                                            Chat om Ticket
+                                        </button>
+                                    </div>
+                                </div>
+                            }
+                        </div>
+                    }
+                    else
+                    {
+                        <div class="no-tickets">
+                            <p>Du har ingen eksisterende tickets endnu.</p>
+                            <p>Opret dit første ticket ovenfor!</p>
+                        </div>
+                    }
+                </div>
+            </div>
+        }
+        else
+        {
+            <div class="chat-section">
+                <div class="chat-controls">
+                    <h3>Live Chat - Ticket @currentTicketNumber</h3>
+                    <button class="btn btn-outline-secondary" @onclick="LeaveChat">
+                        Forlad Chat
+                    </button>
+                </div>
+                
+                <TicketChat 
+                    TicketId="@currentTicketId"
+                    TicketNumber="@currentTicketNumber"
+                    UserId="@demoUserId"
+                    Username="@demoUsername"
+                    UserRole="User"
+                    CanSendInternalMessages="false" />
+            </div>
+        }
+    </div>
+
+    <div class="demo-info">
+        <h4>Demo Information</h4>
+        <ul>
+            <li><strong>Bruger ID:</strong> @demoUserId</li>
+            <li><strong>Brugernavn:</strong> @demoUsername</li>
+            <li><strong>Rolle:</strong> User (Booking ejer)</li>
+            <li><strong>SignalR Status:</strong> 
+                @if (SignalRService.IsConnected)
+                {
+                    <span class="text-success">🟢 Forbundet</span>
+                }
+                else
+                {
+                    <span class="text-danger">🔴 Ikke forbundet</span>
+                }
+            </li>
+        </ul>
+    </div>
+</div>
+
+@code {
+    private string demoUserId = "demo-user-123";
+    private string demoUsername = "Demo Bruger";
+    private string currentTicketId = string.Empty;
+    private string currentTicketNumber = string.Empty;
+    private List<TicketGetDto> existingTickets = new();
+    private bool isLoadingTickets = false;
+
+    protected override async Task OnInitializedAsync()
+    {
+        // Ensure authentication is initialized
+        await AuthService.InitializeAsync();
+        
+        // Check if user is authenticated
+        var isAuthenticated = await AuthService.IsAuthenticatedAsync();
+        if (!isAuthenticated)
+        {
+            Logger.LogWarning("Bruger ikke autentificeret - bruger demo mode");
+        }
+        
+        // Initialize SignalR connection
+        await SignalRService.InitializeAsync("demo-token");
+        
+        // Register event handlers
+        SignalRService.Connected += OnConnected;
+        SignalRService.Error += OnError;
+        
+        // Load existing tickets
+        await LoadExistingTickets();
+    }
+
+    private async Task LoadExistingTickets()
+    {
+        try
+        {
+            isLoadingTickets = true;
+            StateHasChanged();
+            
+            var response = await APIService.GetMyTicketsAsync();
+            if (response.IsSuccess && response.Data != null)
+            {
+                existingTickets = response.Data.ToList();
+            }
+            else
+            {
+                Logger.LogError("Fejl ved hentning af tickets: {Error}", response.ErrorMessage);
+            }
+        }
+        catch (Exception ex)
+        {
+            Logger.LogError(ex, "Exception ved hentning af tickets");
+        }
+        finally
+        {
+            isLoadingTickets = false;
+            StateHasChanged();
+        }
+    }
+
+    private async Task OnTicketCreated(string ticketId)
+    {
+        currentTicketId = ticketId;
+        currentTicketNumber = $"TKT-{DateTime.Now:yyyy}-{ticketId.Substring(0, 3)}";
+        
+        Logger.LogInformation("Ticket oprettet: {TicketId}", ticketId);
+        
+        // Reload tickets to show the new one
+        await LoadExistingTickets();
+        StateHasChanged();
+    }
+
+    private void JoinTicketChat(string ticketId, string ticketNumber)
+    {
+        currentTicketId = ticketId;
+        currentTicketNumber = ticketNumber;
+        StateHasChanged();
+    }
+
+    private void LeaveChat()
+    {
+        currentTicketId = string.Empty;
+        currentTicketNumber = string.Empty;
+        StateHasChanged();
+    }
+
+    private string GetStatusClass(string status)
+    {
+        return status.ToLower() switch
+        {
+            "open" => "status-open",
+            "in_progress" => "status-in-progress",
+            "resolved" => "status-resolved",
+            "closed" => "status-closed",
+            _ => "status-unknown"
+        };
+    }
+
+    private async Task OnConnected(string message)
+    {
+        Logger.LogInformation("SignalR forbundet: {Message}", message);
+        await InvokeAsync(StateHasChanged);
+    }
+
+    private async Task OnError(string message)
+    {
+        Logger.LogError("SignalR fejl: {Message}", message);
+        await InvokeAsync(StateHasChanged);
+    }
+
+    public async ValueTask DisposeAsync()
+    {
+        await SignalRService.DisposeAsync();
+    }
+}
+
+<style>
+    .demo-container {
+        max-width: 1200px;
+        margin: 0 auto;
+        padding: 2rem;
+    }
+
+    .demo-header {
+        text-align: center;
+        margin-bottom: 3rem;
+        padding: 2rem;
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        color: white;
+        border-radius: 12px;
+        box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+    }
+
+    .demo-header h1 {
+        margin-bottom: 1rem;
+        font-size: 2.5rem;
+        font-weight: 700;
+    }
+
+    .demo-description {
+        font-size: 1.1rem;
+        opacity: 0.9;
+        margin: 0;
+    }
+
+    .demo-content {
+        margin-bottom: 3rem;
+    }
+
+    .ticket-creation-section {
+        background-color: #f8f9fa;
+        padding: 2rem;
+        border-radius: 12px;
+        box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+    }
+
+    .chat-section {
+        background-color: #fff;
+        border-radius: 12px;
+        box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+        overflow: hidden;
+    }
+
+    .chat-controls {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        padding: 1rem 2rem;
+        background-color: #f8f9fa;
+        border-bottom: 1px solid #dee2e6;
+    }
+
+    .chat-controls h3 {
+        margin: 0;
+        color: #495057;
+    }
+
+    .demo-info {
+        background-color: #e9ecef;
+        padding: 1.5rem;
+        border-radius: 8px;
+        border-left: 4px solid #007bff;
+    }
+
+    .demo-info h4 {
+        color: #495057;
+        margin-bottom: 1rem;
+    }
+
+    .demo-info ul {
+        margin: 0;
+        padding-left: 1.5rem;
+    }
+
+    .demo-info li {
+        margin-bottom: 0.5rem;
+        color: #6c757d;
+    }
+
+    .text-success {
+        color: #28a745 !important;
+    }
+
+    .text-danger {
+        color: #dc3545 !important;
+    }
+
+    .btn {
+        padding: 0.5rem 1rem;
+        border-radius: 6px;
+        font-weight: 600;
+        text-decoration: none;
+        display: inline-block;
+        transition: all 0.2s;
+    }
+
+    .btn-outline-secondary {
+        color: #6c757d;
+        border: 1px solid #6c757d;
+        background-color: transparent;
+    }
+
+    .btn-outline-secondary:hover {
+        color: #fff;
+        background-color: #6c757d;
+        border-color: #6c757d;
+    }
+
+    .ticket-section {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 2rem;
+    }
+
+    .existing-tickets-section {
+        background-color: #f8f9fa;
+        padding: 2rem;
+        border-radius: 12px;
+        box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+    }
+
+    .existing-tickets-section h3 {
+        margin-bottom: 1.5rem;
+        color: #495057;
+    }
+
+    .tickets-list {
+        display: flex;
+        flex-direction: column;
+        gap: 1rem;
+    }
+
+    .ticket-card {
+        background-color: #fff;
+        border-radius: 8px;
+        padding: 1.5rem;
+        box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+        border-left: 4px solid #dee2e6;
+        transition: all 0.2s;
+    }
+
+    .ticket-card:hover {
+        box-shadow: 0 4px 8px rgba(0, 0, 0, 0.15);
+        transform: translateY(-2px);
+    }
+
+    .ticket-card.status-open {
+        border-left-color: #28a745;
+    }
+
+    .ticket-card.status-in-progress {
+        border-left-color: #ffc107;
+    }
+
+    .ticket-card.status-resolved {
+        border-left-color: #17a2b8;
+    }
+
+    .ticket-card.status-closed {
+        border-left-color: #6c757d;
+    }
+
+    .ticket-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        margin-bottom: 1rem;
+    }
+
+    .ticket-header h4 {
+        margin: 0;
+        color: #495057;
+        font-size: 1.1rem;
+    }
+
+    .status-badge {
+        padding: 0.25rem 0.75rem;
+        border-radius: 12px;
+        font-size: 0.8rem;
+        font-weight: 600;
+        text-transform: uppercase;
+    }
+
+    .status-open .status-badge {
+        background-color: #d4edda;
+        color: #155724;
+    }
+
+    .status-in-progress .status-badge {
+        background-color: #fff3cd;
+        color: #856404;
+    }
+
+    .status-resolved .status-badge {
+        background-color: #d1ecf1;
+        color: #0c5460;
+    }
+
+    .status-closed .status-badge {
+        background-color: #e2e3e5;
+        color: #383d41;
+    }
+
+    .ticket-content h5 {
+        margin: 0 0 0.5rem 0;
+        color: #212529;
+        font-size: 1rem;
+    }
+
+    .ticket-description {
+        margin: 0 0 1rem 0;
+        color: #6c757d;
+        font-size: 0.9rem;
+        line-height: 1.4;
+    }
+
+    .ticket-meta {
+        display: flex;
+        gap: 1rem;
+        margin-bottom: 1rem;
+        flex-wrap: wrap;
+    }
+
+    .ticket-meta span {
+        font-size: 0.8rem;
+        padding: 0.25rem 0.5rem;
+        border-radius: 4px;
+        background-color: #e9ecef;
+        color: #495057;
+    }
+
+    .priority.high {
+        background-color: #f8d7da;
+        color: #721c24;
+    }
+
+    .priority.medium {
+        background-color: #fff3cd;
+        color: #856404;
+    }
+
+    .priority.low {
+        background-color: #d4edda;
+        color: #155724;
+    }
+
+    .ticket-actions {
+        display: flex;
+        justify-content: flex-end;
+    }
+
+    .btn-primary {
+        background-color: #007bff;
+        color: white;
+        border: 1px solid #007bff;
+    }
+
+    .btn-primary:hover {
+        background-color: #0056b3;
+        border-color: #0056b3;
+    }
+
+    .no-tickets {
+        text-align: center;
+        padding: 2rem;
+        color: #6c757d;
+    }
+
+    .loading {
+        text-align: center;
+        padding: 2rem;
+        color: #6c757d;
+        font-style: italic;
+    }
+
+    @@media (max-width: 768px) {
+        .ticket-section {
+            grid-template-columns: 1fr;
+        }
+    }
+</style>

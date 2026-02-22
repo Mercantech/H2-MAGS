@@ -1,0 +1,86 @@
+meta {
+  name: Get Ticket Metrics
+  type: http
+  seq: 22
+  description: |
+    Henter detaljerede metrics for ticket systemet.
+    Dette simulerer en manager der skal se performance data.
+    
+    Features tested:
+    - Performance metrics
+    - SLA compliance
+    - Trend analysis
+    - Quality metrics
+}
+
+get {
+  url: {{baseUrl}}/metrics
+  query: {
+    startDate: "2025-01-01"
+    endDate: "2025-12-31"
+    granularity: "day"
+    includeTrends: true
+  }
+  auth: bearer
+}
+
+auth:bearer {
+  token: {{authToken}}
+}
+
+tests {
+  test("Status code is 200 OK", function() {
+    expect(res.getStatus()).to.equal(200);
+  });
+  
+  test("Response contains metrics data", function() {
+    expect(res.getBody()).to.have.property("data");
+    expect(res.getBody().data).to.be.an("object");
+  });
+  
+  test("Metrics contain ticket counts", function() {
+    const metrics = res.getBody().data;
+    expect(metrics).to.have.property("totalTickets");
+    expect(metrics).to.have.property("openTickets");
+    expect(metrics).to.have.property("closedTickets");
+    expect(metrics).to.have.property("resolvedTickets");
+  });
+  
+  test("Metrics contain performance data", function() {
+    const metrics = res.getBody().data;
+    expect(metrics).to.have.property("averageResolutionTime");
+    expect(metrics).to.have.property("medianResolutionTime");
+    expect(metrics).to.have.property("firstResponseTime");
+    expect(metrics).to.have.property("slaCompliance");
+  });
+  
+  test("Metrics contain quality data", function() {
+    const metrics = res.getBody().data;
+    expect(metrics).to.have.property("customerSatisfaction");
+    expect(metrics).to.have.property("ticketReopenRate");
+    expect(metrics).to.have.property("resolutionRate");
+  });
+  
+  test("Metrics contain trend data", function() {
+    const metrics = res.getBody().data;
+    expect(metrics).to.have.property("ticketTrends");
+    expect(metrics).to.have.property("resolutionTrends");
+    expect(metrics).to.have.property("slaTrends");
+  });
+  
+  test("Metrics contain service type breakdown", function() {
+    const metrics = res.getBody().data;
+    expect(metrics).to.have.property("serviceTypeMetrics");
+    expect(metrics.serviceTypeMetrics).to.be.an("object");
+  });
+  
+  test("Metrics contain priority breakdown", function() {
+    const metrics = res.getBody().data;
+    expect(metrics).to.have.property("priorityMetrics");
+    expect(metrics.priorityMetrics).to.be.an("object");
+  });
+  
+  test("Response time is acceptable", function() {
+    expect(res.getResponseTime()).to.be.below(3000);
+  });
+}

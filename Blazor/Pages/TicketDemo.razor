@@ -1,0 +1,368 @@
+@page "/ticket-demo"
+@using Blazor.Services
+@inject TicketSignalRService SignalRService
+
+<PageTitle>Ticket System Demo</PageTitle>
+
+<div class="demo-landing-container">
+    <div class="demo-header">
+        <h1>🎫 Ticket System Live Chat Demo</h1>
+        <p class="demo-description">
+            Velkommen til vores live demo af ticket systemet med SignalR real-time chat!
+            <br />
+            Åbn to browser vinduer for at teste live kommunikationen mellem bruger og support.
+        </p>
+    </div>
+
+    <div class="demo-cards">
+        <div class="demo-card user-card">
+            <div class="card-header">
+                <h3>👤 Bruger Side</h3>
+                <p>Opret tickets og chat med support</p>
+            </div>
+            <div class="card-content">
+                <ul>
+                    <li>Opret nye tickets</li>
+                    <li>Live chat med support</li>
+                    <li>Få real-time notifikationer</li>
+                    <li>Se ticket status opdateringer</li>
+                </ul>
+            </div>
+            <div class="card-footer">
+                <a href="/ticket-demo-user" class="btn btn-primary" target="_blank">
+                    Åbn Bruger Side
+                </a>
+            </div>
+        </div>
+
+        <div class="demo-card support-card">
+            <div class="card-header">
+                <h3>🎧 Support Side</h3>
+                <p>Håndter tickets og chat med brugere</p>
+            </div>
+            <div class="card-content">
+                <ul>
+                    <li>Se alle åbne tickets</li>
+                    <li>Live chat med brugere</li>
+                    <li>Tildel tickets til dig selv</li>
+                    <li>Luk tickets når løst</li>
+                </ul>
+            </div>
+            <div class="card-footer">
+                <a href="/ticket-demo-support" class="btn btn-success" target="_blank">
+                    Åbn Support Side
+                </a>
+            </div>
+        </div>
+    </div>
+
+    <div class="demo-instructions">
+        <h3>📋 Demo Instruktioner</h3>
+        <div class="instructions-grid">
+            <div class="instruction-step">
+                <div class="step-number">1</div>
+                <div class="step-content">
+                    <h4>Åbn to browser vinduer</h4>
+                    <p>Klik på begge knapper ovenfor for at åbne bruger og support sider i separate vinduer.</p>
+                </div>
+            </div>
+            
+            <div class="instruction-step">
+                <div class="step-number">2</div>
+                <div class="step-content">
+                    <h4>Opret et ticket</h4>
+                    <p>På bruger siden, udfyld formularen og opret et nyt ticket. Du vil se det dukke op på support siden i real-time!</p>
+                </div>
+            </div>
+            
+            <div class="instruction-step">
+                <div class="step-number">3</div>
+                <div class="step-content">
+                    <h4>Start live chat</h4>
+                    <p>Klik på "Start Live Chat" på bruger siden, og klik på ticketet på support siden for at starte chatten.</p>
+                </div>
+            </div>
+            
+            <div class="instruction-step">
+                <div class="step-number">4</div>
+                <div class="step-content">
+                    <h4>Test real-time funktioner</h4>
+                    <p>Skriv beskeder, se typing indikatorer, tildel tickets, og luk tickets - alt i real-time!</p>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="tech-info">
+        <h3>🔧 Teknisk Information</h3>
+        <div class="tech-grid">
+            <div class="tech-item">
+                <h4>Backend</h4>
+                <ul>
+                    <li>ASP.NET Core Web API</li>
+                    <li>SignalR Hub</li>
+                    <li>Entity Framework Core</li>
+                    <li>PostgreSQL Database</li>
+                </ul>
+            </div>
+            <div class="tech-item">
+                <h4>Frontend</h4>
+                <ul>
+                    <li>Blazor Server</li>
+                    <li>SignalR Client</li>
+                    <li>Bootstrap CSS</li>
+                    <li>Real-time UI Updates</li>
+                </ul>
+            </div>
+            <div class="tech-item">
+                <h4>Features</h4>
+                <ul>
+                    <li>Live Chat</li>
+                    <li>Typing Indicators</li>
+                    <li>Real-time Notifications</li>
+                    <li>Ticket Management</li>
+                </ul>
+            </div>
+        </div>
+    </div>
+</div>
+
+@code {
+    protected override async Task OnInitializedAsync()
+    {
+        // Initialize SignalR connection for demo purposes
+        await SignalRService.InitializeAsync("demo-token");
+    }
+
+    public async ValueTask DisposeAsync()
+    {
+        await SignalRService.DisposeAsync();
+    }
+}
+
+<style>
+    .demo-landing-container {
+        max-width: 1200px;
+        margin: 0 auto;
+        padding: 2rem;
+    }
+
+    .demo-header {
+        text-align: center;
+        margin-bottom: 4rem;
+        padding: 3rem 2rem;
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        color: white;
+        border-radius: 16px;
+        box-shadow: 0 8px 16px rgba(0, 0, 0, 0.1);
+    }
+
+    .demo-header h1 {
+        margin-bottom: 1.5rem;
+        font-size: 3rem;
+        font-weight: 700;
+    }
+
+    .demo-description {
+        font-size: 1.2rem;
+        opacity: 0.9;
+        margin: 0;
+        line-height: 1.6;
+    }
+
+    .demo-cards {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 2rem;
+        margin-bottom: 4rem;
+    }
+
+    .demo-card {
+        background: white;
+        border-radius: 16px;
+        box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+        overflow: hidden;
+        transition: transform 0.3s, box-shadow 0.3s;
+    }
+
+    .demo-card:hover {
+        transform: translateY(-4px);
+        box-shadow: 0 8px 16px rgba(0, 0, 0, 0.15);
+    }
+
+    .user-card {
+        border-top: 4px solid #007bff;
+    }
+
+    .support-card {
+        border-top: 4px solid #28a745;
+    }
+
+    .card-header {
+        padding: 2rem;
+        background: linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%);
+    }
+
+    .card-header h3 {
+        margin: 0 0 0.5rem 0;
+        font-size: 1.5rem;
+        font-weight: 600;
+    }
+
+    .card-header p {
+        margin: 0;
+        color: #6c757d;
+    }
+
+    .card-content {
+        padding: 2rem;
+    }
+
+    .card-content ul {
+        margin: 0;
+        padding-left: 1.5rem;
+    }
+
+    .card-content li {
+        margin-bottom: 0.75rem;
+        color: #495057;
+    }
+
+    .card-footer {
+        padding: 1.5rem 2rem;
+        background-color: #f8f9fa;
+        border-top: 1px solid #dee2e6;
+    }
+
+    .btn {
+        display: inline-block;
+        padding: 0.75rem 2rem;
+        border-radius: 8px;
+        font-weight: 600;
+        text-decoration: none;
+        transition: all 0.2s;
+        border: none;
+        cursor: pointer;
+        text-align: center;
+        width: 100%;
+    }
+
+    .btn-primary {
+        background-color: #007bff;
+        color: white;
+    }
+
+    .btn-primary:hover {
+        background-color: #0056b3;
+        color: white;
+    }
+
+    .btn-success {
+        background-color: #28a745;
+        color: white;
+    }
+
+    .btn-success:hover {
+        background-color: #1e7e34;
+        color: white;
+    }
+
+    .demo-instructions {
+        background-color: #f8f9fa;
+        padding: 3rem;
+        border-radius: 16px;
+        margin-bottom: 4rem;
+    }
+
+    .demo-instructions h3 {
+        text-align: center;
+        margin-bottom: 2rem;
+        color: #495057;
+    }
+
+    .instructions-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+        gap: 2rem;
+    }
+
+    .instruction-step {
+        display: flex;
+        align-items: flex-start;
+        gap: 1rem;
+    }
+
+    .step-number {
+        background: linear-gradient(135deg, #007bff 0%, #0056b3 100%);
+        color: white;
+        width: 40px;
+        height: 40px;
+        border-radius: 50%;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-weight: 700;
+        font-size: 1.2rem;
+        flex-shrink: 0;
+    }
+
+    .step-content h4 {
+        margin: 0 0 0.5rem 0;
+        color: #495057;
+    }
+
+    .step-content p {
+        margin: 0;
+        color: #6c757d;
+        line-height: 1.5;
+    }
+
+    .tech-info {
+        background: linear-gradient(135deg, #e9ecef 0%, #f8f9fa 100%);
+        padding: 3rem;
+        border-radius: 16px;
+        border-left: 4px solid #007bff;
+    }
+
+    .tech-info h3 {
+        text-align: center;
+        margin-bottom: 2rem;
+        color: #495057;
+    }
+
+    .tech-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+        gap: 2rem;
+    }
+
+    .tech-item h4 {
+        color: #495057;
+        margin-bottom: 1rem;
+        font-size: 1.1rem;
+    }
+
+    .tech-item ul {
+        margin: 0;
+        padding-left: 1.5rem;
+    }
+
+    .tech-item li {
+        margin-bottom: 0.5rem;
+        color: #6c757d;
+    }
+
+    @@media (max-width: 768px) {
+        .demo-cards {
+            grid-template-columns: 1fr;
+        }
+        
+        .demo-header h1 {
+            font-size: 2rem;
+        }
+        
+        .demo-description {
+            font-size: 1rem;
+        }
+    }
+</style>

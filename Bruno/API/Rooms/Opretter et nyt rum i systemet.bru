@@ -1,0 +1,63 @@
+meta {
+  name: Opretter et nyt rum i systemet.
+  type: http
+  seq: 2
+}
+
+post {
+  url: {{baseUrl}}/api/Rooms
+  body: json
+  auth: none
+}
+
+headers {
+  Authorization: Bearer {{JWT-Admin}}
+}
+
+body:json {
+  {
+    "number": "999",
+    "capacity": 2,
+    "numberOfBeds": 1,
+    "roomType": "Family Room",
+    "pricePerNight": "600",
+    "floorNumber": 9,
+    "hasBalcony": false,
+    "hasSeaView": true,
+    "hasWifi": false,
+    "hasAirConditioning": false,
+    "hasMinibar": false,
+    "isAccessible": false,
+    "description": "New dummy room",
+    "squareMeters": 43,
+    "hotelId": "{{hotel-id}}"
+  }
+}
+
+script:post-response {
+  // Gem Room ID fra responset
+    try {
+      if (res.body && res.body.id) {
+        console.log("Created Room ID: " + res.body.id);
+        bru.setEnvVar("room-id", res.body.id);
+        console.log("Room ID gemt som variabel: {{room-id}}");
+      } else {
+        console.log("Ingen ID fundet i responset");
+        console.log("Response body:", res.body);
+      }
+    } catch (error) {
+      console.log("Fejl ved håndtering af responset: " + error.message);
+    }
+}
+
+tests {
+  // Test response status
+  test("Room create returnerer 200/201", function() {
+    expect([200, 201]).to.include(res.status);
+  });
+  
+  // Test at der kommer et ID tilbage
+  test("Response body indeholder id", function() {
+    expect(res.body).to.have.property("id");
+  });
+}

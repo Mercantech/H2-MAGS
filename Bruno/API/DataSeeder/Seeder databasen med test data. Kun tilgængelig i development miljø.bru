@@ -1,0 +1,25 @@
+meta {
+  name: Seeder databasen med test data. Kun tilgængelig i development miljø.
+  type: http
+  seq: 1
+  tags: [
+    Seeder
+  ]
+}
+
+post {
+  url: {{baseUrl}}/api/DataSeeder/seed
+  body: none
+  auth: none
+}
+
+params:query {
+  ~userCount: 
+  ~hotelCount: 
+  ~roomsPerHotel: 
+  ~bookingCount: 
+}
+
+headers {
+  Authorization: {{apiKey}}
+}

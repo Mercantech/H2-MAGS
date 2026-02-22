@@ -1,13 +1,10 @@
-appsettings.json
-appsettings.Development.json
 bin/
 obj/
-.vs/
+.vs
+.env
+.vscode
+appsettings.json
+appsettings.Development.json
 
-/.idea
-node_modules/
-
-.vscode/
-/Svelte/Hotel/node_modules
-/Svelte/node_modules
-x
+GitHub-MCP.json
+mcp.json

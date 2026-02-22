@@ -1,0 +1,38 @@
+meta {
+  name: Opdaterer en eksisterende booking.
+  type: http
+  seq: 4
+}
+
+put {
+  url: {{baseUrl}}/api/Bookings/:id
+  body: json
+  auth: none
+}
+
+params:path {
+  id: {{booking-id}}
+}
+
+headers {
+  Authorization: Bearer {{JWT-Admin}}
+}
+
+body:json {
+  {
+    "id": "{{booking-id}}",
+    "userId": "{{user-id}}",
+    "roomId": "{{room-id}}",
+    "startDate": "{{start-date}}",
+    "endDate": "{{end-date}}",
+    "numberOfGuests": 2,
+    "specialRequests": "Yes"
+  }
+}
+
+tests {
+  // Test status kode
+  test("Status kode skal være 204 No Content", function() {
+    expect(res.status).to.equal(204);
+  });
+}

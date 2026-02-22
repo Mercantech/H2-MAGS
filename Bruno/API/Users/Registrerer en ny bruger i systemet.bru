@@ -1,0 +1,71 @@
+meta {
+  name: Registrerer en ny bruger i systemet.
+  type: http
+  seq: 1
+  tags: [
+    User
+  ]
+}
+
+post {
+  url: {{baseUrl}}/api/Users/register
+  body: json
+  auth: none
+}
+
+body:json {
+  {
+    "email": "{{User-Email}}",
+    "username": "{{User-Username}}",
+    "password": "{{User-Password}}"
+  }
+}
+
+script:pre-request {
+  // Generer tilfældig email
+  const domains = ["gmail.com", "hotmail.com", "outlook.com", "yahoo.com", "live.com"];
+  const randomDomain = domains[Math.floor(Math.random() * domains.length)];
+  const randomEmail = `user${Math.floor(Math.random() * 10000)}@${randomDomain}`;
+  
+  // Generer tilfældigt brugernavn
+  const adjectives = ["Cool", "Happy", "Smart", "Fast", "Bright", "Wise", "Quick", "Sharp"];
+  const nouns = ["User", "Person", "Guy", "Girl", "One", "Star", "Hero", "Pro"];
+  const randomAdjective = adjectives[Math.floor(Math.random() * adjectives.length)];
+  const randomNoun = nouns[Math.floor(Math.random() * nouns.length)];
+  const randomUsername = `${randomAdjective}${randomNoun}${Math.floor(Math.random() * 100)}`;
+  const randomPassword = "Cisco1234!";
+  
+  // Gem variablerne med konsistent "User-" format
+  bru.setEnvVar("User-Email", randomEmail);
+  bru.setEnvVar("User-Username", randomUsername);
+  bru.setEnvVar("User-Password", randomPassword);
+  
+  // Log variablerne for debugging
+  console.log("Genererede tilfældige brugerdata:");
+  console.log("Email: " + randomEmail);
+  console.log("Username: " + randomUsername);
+  console.log("Password: " + randomPassword);
+}
+
+script:post-response {
+  // Gem bruger ID fra responset
+  try {
+    if (res.body && res.body.id) {
+      console.log("Created User ID: " + res.body.id);
+      bru.setEnvVar("user-id", res.body.id);
+      console.log("User ID gemt som variabel: {{user-id}}");
+    } else {
+      console.log("Ingen ID fundet i responset");
+      console.log("Response body:", res.body);
+    }
+  } catch (error) {
+    console.log("Fejl ved håndtering af responset: " + error.message);
+  }
+}
+
+tests {
+  // Test response status
+  test("User login returnerer 200 OK", function() {
+    expect(res.status).to.equal(200);
+  });
+}

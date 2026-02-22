@@ -1,0 +1,15 @@
+meta {
+  name: Rydder alle data fra databasen. Kun tilgængelig i development miljø.
+  type: http
+  seq: 2
+}
+
+delete {
+  url: {{baseUrl}}/api/DataSeeder/clear
+  body: none
+  auth: none
+}
+
+headers {
+  Authorization: {{apiKey}}
+}

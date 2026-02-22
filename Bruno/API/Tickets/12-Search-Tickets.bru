@@ -1,0 +1,97 @@
+meta {
+  name: Search Tickets
+  type: http
+  seq: 12
+  description: |
+    Søger efter tickets med forskellige kriterier.
+    Dette simulerer en support medarbejder der skal finde specifikke tickets.
+    
+    Features tested:
+    - Tekst søgning
+    - Filtrering
+    - Sortering
+    - Paginering
+    - Avancerede søgekriterier
+}
+
+get {
+  url: {{baseUrl}}/search
+  query: {
+    query: "rengøring"
+    serviceType: "Cleaning"
+    status: "Open,InProgress"
+    priority: "Medium,High"
+    startDate: "2025-01-01"
+    endDate: "2025-12-31"
+    page: 1
+    pageSize: 10
+    sortBy: "priority"
+    sortOrder: "desc"
+  }
+  auth: bearer
+}
+
+auth:bearer {
+  token: {{authToken}}
+}
+
+tests {
+  test("Status code is 200 OK", function() {
+    expect(res.getStatus()).to.equal(200);
+  });
+  
+  test("Response contains search results", function() {
+    expect(res.getBody()).to.have.property("data");
+    expect(res.getBody().data).to.be.an("array");
+  });
+  
+  test("Response contains pagination info", function() {
+    expect(res.getBody()).to.have.property("pagination");
+    expect(res.getBody().pagination).to.have.property("page");
+    expect(res.getBody().pagination).to.have.property("pageSize");
+    expect(res.getBody().pagination).to.have.property("totalCount");
+  });
+  
+  test("Search results contain query term", function() {
+    if (res.getBody().data.length > 0) {
+      const ticket = res.getBody().data[0];
+      const searchText = (ticket.title + " " + ticket.description).toLowerCase();
+      expect(searchText).to.include("rengøring");
+    }
+  });
+  
+  test("Search results are filtered by service type", function() {
+    res.getBody().data.forEach(ticket => {
+      expect(ticket.serviceType).to.equal("Cleaning");
+    });
+  });
+  
+  test("Search results are filtered by status", function() {
+    res.getBody().data.forEach(ticket => {
+      expect(["Open", "InProgress"]).to.include(ticket.status);
+    });
+  });
+  
+  test("Search results are filtered by priority", function() {
+    res.getBody().data.forEach(ticket => {
+      expect(["Medium", "High"]).to.include(ticket.priority);
+    });
+  });
+  
+  test("Search results are sorted by priority (highest first)", function() {
+    if (res.getBody().data.length > 1) {
+      const tickets = res.getBody().data;
+      const priorityOrder = { "Critical": 4, "High": 3, "Medium": 2, "Low": 1 };
+      
+      for (let i = 0; i < tickets.length - 1; i++) {
+        const currentPriority = priorityOrder[tickets[i].priority];
+        const nextPriority = priorityOrder[tickets[i + 1].priority];
+        expect(currentPriority).to.be.at.least(nextPriority);
+      }
+    }
+  });
+  
+  test("Response time is acceptable", function() {
+    expect(res.getResponseTime()).to.be.below(3000);
+  });
+}

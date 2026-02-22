@@ -1,0 +1,94 @@
+meta {
+  name: Get Ticket Audit Log
+  type: http
+  seq: 29
+  description: |
+    Henter audit log for et ticket.
+    Dette simulerer en auditor der skal se alle ændringer til et ticket.
+    
+    Features tested:
+    - Audit trail
+    - Change tracking
+    - User activity
+    - Security logging
+}
+
+get {
+  url: {{baseUrl}}/{{ticketId}}/audit
+  query: {
+    page: 1
+    pageSize: 50
+    sortBy: "timestamp"
+    sortOrder: "desc"
+  }
+  auth: bearer
+}
+
+auth:bearer {
+  token: {{authToken}}
+}
+
+tests {
+  test("Status code is 200 OK", function() {
+    expect(res.getStatus()).to.equal(200);
+  });
+  
+  test("Response contains audit log array", function() {
+    expect(res.getBody()).to.have.property("data");
+    expect(res.getBody().data).to.be.an("array");
+  });
+  
+  test("Response contains pagination info", function() {
+    expect(res.getBody()).to.have.property("pagination");
+    expect(res.getBody().pagination).to.have.property("page");
+    expect(res.getBody().pagination).to.have.property("pageSize");
+    expect(res.getBody().pagination).to.have.property("totalCount");
+  });
+  
+  test("Audit entries have required fields", function() {
+    if (res.getBody().data.length > 0) {
+      const entry = res.getBody().data[0];
+      expect(entry).to.have.property("id");
+      expect(entry).to.have.property("ticketId");
+      expect(entry).to.have.property("action");
+      expect(entry).to.have.property("fieldName");
+      expect(entry).to.have.property("oldValue");
+      expect(entry).to.have.property("newValue");
+      expect(entry).to.have.property("userId");
+      expect(entry).to.have.property("userName");
+      expect(entry).to.have.property("timestamp");
+      expect(entry).to.have.property("ipAddress");
+    }
+  });
+  
+  test("All audit entries belong to the correct ticket", function() {
+    res.getBody().data.forEach(entry => {
+      expect(entry.ticketId).to.equal(ticketId);
+    });
+  });
+  
+  test("Audit entries are sorted by timestamp (newest first)", function() {
+    if (res.getBody().data.length > 1) {
+      const entries = res.getBody().data;
+      for (let i = 0; i < entries.length - 1; i++) {
+        const current = new Date(entries[i].timestamp);
+        const next = new Date(entries[i + 1].timestamp);
+        expect(current.getTime()).to.be.at.least(next.getTime());
+      }
+    }
+  });
+  
+  test("Audit entries contain expected actions", function() {
+    const entries = res.getBody().data;
+    const actions = entries.map(entry => entry.action);
+    
+    // Should contain common actions
+    expect(actions).to.include("CREATE");
+    expect(actions).to.include("UPDATE");
+    expect(actions).to.include("ASSIGN");
+  });
+  
+  test("Response time is acceptable", function() {
+    expect(res.getResponseTime()).to.be.below(2000);
+  });
+}

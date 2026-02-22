@@ -1,0 +1,41 @@
+meta {
+  name: AD Login Test
+  type: http
+  seq: 1
+}
+
+post {
+  url: {{baseUrl}}/api/auth/ad-login
+  body: json
+  auth: none
+}
+
+body:json {
+  {
+    "username": "adReader",
+    "password": "Merc1234!"
+  }
+}
+
+tests {
+  test("Status code is 200", function() {
+    expect(res.getStatus()).to.equal(200);
+  });
+  
+  test("Response contains token", function() {
+    expect(res.getBody().token).to.be.a('string');
+    expect(res.getBody().token.length).to.be.greaterThan(0);
+  });
+  
+  test("Response contains user info", function() {
+    expect(res.getBody().user).to.be.an('object');
+    expect(res.getBody().user.samAccountName).to.be.a('string');
+    expect(res.getBody().user.email).to.be.a('string');
+    expect(res.getBody().user.role).to.be.a('string');
+    expect(res.getBody().user.isADUser).to.equal(true);
+  });
+  
+  test("Response contains AD groups", function() {
+    expect(res.getBody().user.adGroups).to.be.an('array');
+  });
+}

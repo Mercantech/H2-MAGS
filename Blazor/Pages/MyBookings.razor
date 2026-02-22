@@ -1,0 +1,299 @@
+@page "/my-bookings"
+@using Blazor.Services
+@using DomainModels
+@inject APIService ApiService
+@inject AuthenticationService AuthService
+@inject NavigationManager Navigation
+
+<PageTitle>Mine Bookinger - H2 Med MAGS</PageTitle>
+
+<div class="container-fluid">
+    <div class="row">
+        <div class="col-12">
+            <div class="d-flex justify-content-between align-items-center mb-4">
+                <h1 class="mb-0">
+                    <i class="bi bi-calendar-check text-primary me-2"></i>
+                    Mine Bookinger
+                </h1>
+                <button class="btn btn-primary" @onclick="NavigateToRoomSearch">
+                    <i class="bi bi-plus-circle me-2"></i>
+                    Ny Booking
+                </button>
+            </div>
+            <p class="lead text-muted">
+                Her kan du se alle dine bookinger og deres status.
+            </p>
+        </div>
+    </div>
+
+    @if (isLoading)
+    {
+        <div class="text-center p-5">
+            <div class="spinner-border text-primary" role="status">
+                <span class="visually-hidden">Indlæser bookinger...</span>
+            </div>
+            <p class="mt-3 text-muted">Henter dine bookinger...</p>
+        </div>
+    }
+    else if (!string.IsNullOrEmpty(errorMessage))
+    {
+        <div class="alert alert-danger" role="alert">
+            <i class="bi bi-exclamation-triangle me-2"></i>
+            @errorMessage
+        </div>
+    }
+    else if (bookings == null || !bookings.Any())
+    {
+        <div class="text-center p-5">
+            <div class="mb-4">
+                <i class="bi bi-calendar-x text-muted" style="font-size: 4rem;"></i>
+            </div>
+            <h4 class="text-muted">Ingen bookinger fundet</h4>
+            <p class="text-muted mb-4">Du har endnu ikke lavet nogen bookinger.</p>
+            <button class="btn btn-primary" @onclick="NavigateToRoomSearch">
+                <i class="bi bi-search me-2"></i>
+                Find ledige rum
+            </button>
+        </div>
+    }
+    else
+    {
+        <div class="row">
+            @foreach (var booking in bookings)
+            {
+                <div class="col-md-6 col-lg-4 mb-4">
+                    <div class="card h-100 booking-card @GetBookingStatusClass(booking.BookingStatus)">
+                        <div class="card-header d-flex justify-content-between align-items-center">
+                            <h6 class="mb-0">
+                                <i class="bi bi-building me-1"></i>
+                                @booking.HotelName
+                            </h6>
+                            <span class="badge @GetStatusBadgeClass(booking.BookingStatus)">
+                                @GetStatusDisplayName(booking.BookingStatus)
+                            </span>
+                        </div>
+                        <div class="card-body">
+                            <h5 class="card-title">Rum @booking.RoomNumber</h5>
+                            <p class="card-text text-muted">@booking.RoomType</p>
+                            
+                            <div class="booking-details mb-3">
+                                <div class="row">
+                                    <div class="col-6">
+                                        <small class="text-muted">Ankomst:</small><br>
+                                        <strong>@booking.StartDate.ToString("dd/MM/yyyy")</strong>
+                                    </div>
+                                    <div class="col-6">
+                                        <small class="text-muted">Afrejse:</small><br>
+                                        <strong>@booking.EndDate.ToString("dd/MM/yyyy")</strong>
+                                    </div>
+                                </div>
+                                <div class="row mt-2">
+                                    <div class="col-6">
+                                        <small class="text-muted">Antal nætter:</small><br>
+                                        <strong>@GetNumberOfNights(booking.StartDate, booking.EndDate)</strong>
+                                    </div>
+                                    <div class="col-6">
+                                        <small class="text-muted">Antal gæster:</small><br>
+                                        <strong>@booking.NumberOfGuests</strong>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <div class="booking-price mb-3">
+                                <div class="d-flex justify-content-between">
+                                    <span>Pris per nat:</span>
+                                    <strong>@GetPricePerNight(booking.TotalPrice, booking.StartDate, booking.EndDate).ToString("C")</strong>
+                                </div>
+                                <div class="d-flex justify-content-between">
+                                    <span>Total pris:</span>
+                                    <strong class="text-primary">@booking.TotalPrice.ToString("C")</strong>
+                                </div>
+                            </div>
+
+                            @if (!string.IsNullOrEmpty(booking.SpecialRequests))
+                            {
+                                <div class="booking-notes">
+                                    <small class="text-muted">Særlige ønsker:</small><br>
+                                    <small>@booking.SpecialRequests</small>
+                                </div>
+                            }
+                        </div>
+                        <div class="card-footer">
+                            <div class="d-grid gap-2">
+                                <button class="btn btn-outline-primary btn-sm" @onclick="() => ViewBookingDetails(booking.Id)">
+                                    <i class="bi bi-eye me-1"></i>
+                                    Se detaljer
+                                </button>
+                                @if (CanCancelBooking(booking))
+                                {
+                                    <button class="btn btn-outline-danger btn-sm" @onclick="() => CancelBooking(booking.Id)">
+                                        <i class="bi bi-x-circle me-1"></i>
+                                        Afbestil
+                                    </button>
+                                }
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            }
+        </div>
+    }
+</div>
+
+<style>
+    .booking-card {
+        transition: all 0.3s ease;
+        border: 1px solid rgba(0, 0, 0, 0.125);
+    }
+
+    .booking-card:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
+    }
+
+    .booking-card.booking-confirmed {
+        border-left: 4px solid #28a745;
+    }
+
+    .booking-card.booking-pending {
+        border-left: 4px solid #ffc107;
+    }
+
+    .booking-card.booking-cancelled {
+        border-left: 4px solid #dc3545;
+    }
+
+    .booking-details {
+        background: rgba(0, 0, 0, 0.02);
+        padding: 1rem;
+        border-radius: 8px;
+        border: 1px solid rgba(0, 0, 0, 0.05);
+    }
+
+    .booking-price {
+        background: rgba(13, 110, 253, 0.05);
+        padding: 1rem;
+        border-radius: 8px;
+        border: 1px solid rgba(13, 110, 253, 0.1);
+    }
+
+    .booking-notes {
+        background: rgba(108, 117, 125, 0.05);
+        padding: 0.75rem;
+        border-radius: 6px;
+        border: 1px solid rgba(108, 117, 125, 0.1);
+    }
+
+    .badge {
+        font-size: 0.75rem;
+        padding: 0.5rem 0.75rem;
+    }
+</style>
+
+@code {
+    private BookingGetDto[]? bookings;
+    private bool isLoading = true;
+    private string errorMessage = string.Empty;
+
+    protected override async Task OnInitializedAsync()
+    {
+        // Tjek om brugeren er logget ind
+        if (!await AuthService.IsAuthenticatedAsync())
+        {
+            Navigation.NavigateTo("/login");
+            return;
+        }
+
+        await LoadBookings();
+    }
+
+    private async Task LoadBookings()
+    {
+        isLoading = true;
+        errorMessage = string.Empty;
+        StateHasChanged();
+
+        try
+        {
+            bookings = (await ApiService.GetMyBookingsAsync()).Data.ToArray();
+        }
+        catch (Exception ex)
+        {
+            errorMessage = "Fejl ved indlæsning af bookinger: " + ex.Message;
+            Console.WriteLine($"Fejl ved indlæsning af bookinger: {ex}");
+        }
+        finally
+        {
+            isLoading = false;
+            StateHasChanged();
+        }
+    }
+
+    private void ViewBookingDetails(string bookingId)
+    {
+        Navigation.NavigateTo($"/booking/{bookingId}");
+    }
+
+    private void NavigateToRoomSearch()
+    {
+        Navigation.NavigateTo("/rooms");
+    }
+
+    private async Task CancelBooking(string bookingId)
+    {
+        // TODO: Implementer afbestilling af booking
+        // Dette kunne være en modal eller en bekræftelsesdialog
+        Console.WriteLine($"Afbestil booking: {bookingId}");
+    }
+
+    private string GetBookingStatusClass(string status)
+    {
+        return status.ToLower() switch
+        {
+            "confirmed" => "booking-confirmed",
+            "pending" => "booking-pending",
+            "cancelled" => "booking-cancelled",
+            _ => ""
+        };
+    }
+
+    private string GetStatusBadgeClass(string status)
+    {
+        return status.ToLower() switch
+        {
+            "confirmed" => "bg-success",
+            "pending" => "bg-warning text-dark",
+            "cancelled" => "bg-danger",
+            _ => "bg-secondary"
+        };
+    }
+
+    private string GetStatusDisplayName(string status)
+    {
+        return status.ToLower() switch
+        {
+            "confirmed" => "Bekræftet",
+            "pending" => "Afventer",
+            "cancelled" => "Afbestilt",
+            _ => status
+        };
+    }
+
+    private bool CanCancelBooking(BookingGetDto booking)
+    {
+        // Kan kun afbestille hvis booking er bekræftet og start dato er i fremtiden
+        return booking.BookingStatus.ToLower() == "confirmed" && 
+               booking.StartDate > DateTime.Today;
+    }
+
+    private int GetNumberOfNights(DateTime startDate, DateTime endDate)
+    {
+        return (endDate - startDate).Days;
+    }
+
+    private decimal GetPricePerNight(decimal totalPrice, DateTime startDate, DateTime endDate)
+    {
+        var nights = GetNumberOfNights(startDate, endDate);
+        return nights > 0 ? totalPrice / nights : totalPrice;
+    }
+}

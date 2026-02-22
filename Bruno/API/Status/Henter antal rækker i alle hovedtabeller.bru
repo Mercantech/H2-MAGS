@@ -1,0 +1,42 @@
+meta {
+  name: Henter antal rækker i alle hovedtabeller.
+  type: http
+  seq: 4
+   tags: [
+    Status
+  ]
+}
+
+get {
+  url: {{baseUrl}}/api/Status/tablecount
+  body: none
+  auth: none
+}
+
+headers {
+  Authorization: {{apiKey}}
+}
+
+tests {
+  // Test status kode
+  test("Status kode skal være 200 OK", function() {
+    expect(res.status).to.equal(200);
+  });
+
+  // Test at responset ikke er tomt
+  test("Response skal ikke være tom", function() {
+    expect(res.body).to.not.be.empty;
+  });
+
+  // Test at responset er et objekt
+  test("Response skal være et objekt", function() {
+    expect(typeof res.body).to.equal("object");
+    expect(Array.isArray(res.body)).to.be.false;
+  });
+
+  // Test at responset har mindst én tabel
+  test("Response skal have mindst én tabel", function() {
+    const tableCount = Object.keys(res.body).length;
+    expect(tableCount).to.be.greaterThan(0);
+  });
+}

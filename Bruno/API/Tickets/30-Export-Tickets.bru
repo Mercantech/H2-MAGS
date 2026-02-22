@@ -1,0 +1,76 @@
+meta {
+  name: Export Tickets
+  type: http
+  seq: 30
+  description: |
+    Eksporterer tickets til CSV format.
+    Dette simulerer en manager der skal eksportere ticket data.
+    
+    Features tested:
+    - Data export
+    - Format validation
+    - Filtering
+    - Performance
+}
+
+get {
+  url: {{baseUrl}}/export
+  query: {
+    format: "csv"
+    startDate: "2025-01-01"
+    endDate: "2025-12-31"
+    serviceType: "Cleaning"
+    status: "Open,InProgress,Closed"
+    includeComments: true
+  }
+  auth: bearer
+}
+
+auth:bearer {
+  token: {{authToken}}
+}
+
+tests {
+  test("Status code is 200 OK", function() {
+    expect(res.getStatus()).to.equal(200);
+  });
+  
+  test("Response contains export data", function() {
+    expect(res.getBody()).to.have.property("data");
+    expect(res.getBody().data).to.have.property("exportUrl");
+    expect(res.getBody().data).to.have.property("fileName");
+    expect(res.getBody().data).to.have.property("fileSize");
+  });
+  
+  test("Export file has correct format", function() {
+    expect(res.getBody().data.fileName).to.include(".csv");
+  });
+  
+  test("Export contains metadata", function() {
+    expect(res.getBody().data).to.have.property("recordCount");
+    expect(res.getBody().data).to.have.property("exportedAt");
+    expect(res.getBody().data).to.have.property("filters");
+  });
+  
+  test("Export filters are applied", function() {
+    const filters = res.getBody().data.filters;
+    expect(filters).to.have.property("serviceType");
+    expect(filters).to.have.property("status");
+    expect(filters).to.have.property("startDate");
+    expect(filters).to.have.property("endDate");
+  });
+  
+  test("Export contains record count", function() {
+    expect(res.getBody().data.recordCount).to.be.a("number");
+    expect(res.getBody().data.recordCount).to.be.at.least(0);
+  });
+  
+  test("Export file size is reasonable", function() {
+    expect(res.getBody().data.fileSize).to.be.a("number");
+    expect(res.getBody().data.fileSize).to.be.at.least(0);
+  });
+  
+  test("Response time is acceptable", function() {
+    expect(res.getResponseTime()).to.be.below(10000);
+  });
+}

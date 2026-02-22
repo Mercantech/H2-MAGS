@@ -1,14 +1,16 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.ComponentModel.DataAnnotations;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 
 namespace DomainModels
 {
-    public abstract class Common
+    public class Common
     {
-        public string Id { get; set; }
+        [Key]
+        public string Id { get; set; } // Kan erstattes med "int Id"
         public DateTime CreatedAt { get; set; }
         public DateTime UpdatedAt { get; set; }
     }

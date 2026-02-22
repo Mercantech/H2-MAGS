@@ -1,0 +1,90 @@
+meta {
+  name: Get Ticket Notifications
+  type: http
+  seq: 24
+  description: |
+    Henter notifikationer for ticket systemet.
+    Dette simulerer en bruger der skal se deres notifikationer.
+    
+    Features tested:
+    - Notification listing
+    - Real-time updates
+    - User-specific filtering
+    - Status tracking
+}
+
+get {
+  url: {{baseUrl}}/notifications
+  query: {
+    userId: "{{userId}}"
+    page: 1
+    pageSize: 20
+    unreadOnly: true
+    sortBy: "createdAt"
+    sortOrder: "desc"
+  }
+  auth: bearer
+}
+
+auth:bearer {
+  token: {{authToken}}
+}
+
+tests {
+  test("Status code is 200 OK", function() {
+    expect(res.getStatus()).to.equal(200);
+  });
+  
+  test("Response contains notifications array", function() {
+    expect(res.getBody()).to.have.property("data");
+    expect(res.getBody().data).to.be.an("array");
+  });
+  
+  test("Response contains pagination info", function() {
+    expect(res.getBody()).to.have.property("pagination");
+    expect(res.getBody().pagination).to.have.property("page");
+    expect(res.getBody().pagination).to.have.property("pageSize");
+    expect(res.getBody().pagination).to.have.property("totalCount");
+  });
+  
+  test("Notifications have required fields", function() {
+    if (res.getBody().data.length > 0) {
+      const notification = res.getBody().data[0];
+      expect(notification).to.have.property("id");
+      expect(notification).to.have.property("type");
+      expect(notification).to.have.property("title");
+      expect(notification).to.have.property("message");
+      expect(notification).to.have.property("ticketId");
+      expect(notification).to.have.property("isRead");
+      expect(notification).to.have.property("createdAt");
+    }
+  });
+  
+  test("All notifications belong to the correct user", function() {
+    res.getBody().data.forEach(notification => {
+      expect(notification).to.have.property("userId");
+      expect(notification.userId).to.equal(userId);
+    });
+  });
+  
+  test("Notifications are filtered by unread status", function() {
+    res.getBody().data.forEach(notification => {
+      expect(notification.isRead).to.equal(false);
+    });
+  });
+  
+  test("Notifications are sorted by creation date (newest first)", function() {
+    if (res.getBody().data.length > 1) {
+      const notifications = res.getBody().data;
+      for (let i = 0; i < notifications.length - 1; i++) {
+        const current = new Date(notifications[i].createdAt);
+        const next = new Date(notifications[i + 1].createdAt);
+        expect(current.getTime()).to.be.at.least(next.getTime());
+      }
+    }
+  });
+  
+  test("Response time is acceptable", function() {
+    expect(res.getResponseTime()).to.be.below(2000);
+  });
+}

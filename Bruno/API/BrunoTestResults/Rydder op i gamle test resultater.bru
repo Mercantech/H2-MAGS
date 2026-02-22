@@ -1,0 +1,44 @@
+meta {
+  name: Rydder op i gamle test resultater
+  type: http
+  seq: 1
+  tags: [
+    Bruno
+  ]
+}
+
+delete {
+  url: {{baseUrl}}/api/BrunoTestResults/cleanup
+  body: none
+  auth: none
+}
+
+headers {
+  Content-Type: application/json
+}
+
+tests {
+  test("Status kode skal være 200 OK", function() {
+    expect(res.getStatus()).to.equal(200);
+  });
+  
+  test("Response skal være et objekt", function() {
+    expect(res.getBody()).to.be.an('object');
+  });
+  
+  test("Response skal have cleanup information", function() {
+    expect(res.getBody()).to.have.property('message');
+    expect(res.getBody()).to.have.property('deletedCount');
+    expect(res.getBody()).to.have.property('remainingCount');
+  });
+  
+  test("Cleanup information skal være korrekte typer", function() {
+    expect(res.getBody().message).to.be.a('string');
+    expect(res.getBody().deletedCount).to.be.a('number');
+    expect(res.getBody().remainingCount).to.be.a('number');
+  });
+  
+  test("Response tid skal være under 2 sekunder", function() {
+    expect(res.getResponseTime()).to.be.below(2000);
+  });
+}

@@ -1,0 +1,500 @@
+@page "/ticket-demo-support"
+@using Blazor.Services
+@using DomainModels
+@using Blazor.Components
+@inject TicketSignalRService SignalRService
+@inject APIService APIService
+@inject ILogger<TicketDemoSupport> Logger
+
+<PageTitle>Ticket Demo - Support</PageTitle>
+
+<div class="demo-container">
+    <div class="demo-header">
+        <h1>🎧 Ticket System Demo - Support Side</h1>
+        <p class="demo-description">
+            Dette er en demo af ticket systemet fra support medarbejderens perspektiv. 
+            Du kan se alle tickets og chatte live med brugere.
+        </p>
+    </div>
+
+    <div class="demo-content">
+        <div class="support-dashboard">
+            <div class="ticket-list-section">
+                <h3>Åbne Tickets</h3>
+                <div class="ticket-list">
+                    @if (tickets.Any())
+                    {
+                        @foreach (var ticket in tickets)
+                        {
+                            <div class="ticket-item @(selectedTicketId == ticket.Id ? "selected" : "")" 
+                                 @onclick="() => SelectTicket(ticket.Id, ticket.TicketNumber)">
+                                <div class="ticket-header">
+                                    <span class="ticket-number">@ticket.TicketNumber</span>
+                                    <span class="ticket-priority priority-@ticket.Priority.ToLower()">@ticket.Priority</span>
+                                </div>
+                                <div class="ticket-title">@ticket.Title</div>
+                                <div class="ticket-meta">
+                                    <span class="ticket-service">@ticket.ServiceType</span>
+                                    <span class="ticket-status">@ticket.Status</span>
+                                </div>
+                            </div>
+                        }
+                    }
+                    else
+                    {
+                        <div class="no-tickets">
+                            <p>Ingen tickets fundet. Opret et ticket fra bruger siden for at se det her.</p>
+                        </div>
+                    }
+                </div>
+            </div>
+
+            <div class="chat-section">
+                @if (!string.IsNullOrEmpty(selectedTicketId))
+                {
+                    <div class="chat-controls">
+                        <h3>Live Chat - Ticket @selectedTicketNumber</h3>
+                        <div class="chat-actions">
+                            <button class="btn btn-success btn-sm" @onclick="AssignTicket">
+                                Tildel til mig
+                            </button>
+                            <button class="btn btn-warning btn-sm" @onclick="CloseTicket">
+                                Luk Ticket
+                            </button>
+                            <button class="btn btn-outline-secondary btn-sm" @onclick="LeaveChat">
+                                Forlad Chat
+                            </button>
+                        </div>
+                    </div>
+                    
+                    <TicketChat 
+                        TicketId="@selectedTicketId"
+                        TicketNumber="@selectedTicketNumber"
+                        UserId="@demoSupportId"
+                        Username="@demoSupportUsername"
+                        UserRole="Reception"
+                        CanSendInternalMessages="true" />
+                }
+                else
+                {
+                    <div class="no-chat-selected">
+                        <h4>Vælg et ticket for at starte chat</h4>
+                        <p>Klik på et ticket i listen til venstre for at starte en live chat med brugeren.</p>
+                    </div>
+                }
+            </div>
+        </div>
+    </div>
+
+    <div class="demo-info">
+        <h4>Demo Information</h4>
+        <ul>
+            <li><strong>Support ID:</strong> @demoSupportId</li>
+            <li><strong>Brugernavn:</strong> @demoSupportUsername</li>
+            <li><strong>Rolle:</strong> Reception (Support medarbejder)</li>
+            <li><strong>SignalR Status:</strong> 
+                @if (SignalRService.IsConnected)
+                {
+                    <span class="text-success">🟢 Forbundet</span>
+                }
+                else
+                {
+                    <span class="text-danger">🔴 Ikke forbundet</span>
+                }
+            </li>
+            <li><strong>Åbne Tickets:</strong> @tickets.Count</li>
+        </ul>
+    </div>
+</div>
+
+@code {
+    private string demoSupportId = "demo-support-456";
+    private string demoSupportUsername = "Demo Support";
+    private string selectedTicketId = string.Empty;
+    private string selectedTicketNumber = string.Empty;
+    private List<TicketGetDto> tickets = new();
+
+    protected override async Task OnInitializedAsync()
+    {
+        // Initialize SignalR connection
+        await SignalRService.InitializeAsync("demo-token");
+        
+        // Register event handlers
+        SignalRService.Connected += OnConnected;
+        SignalRService.Error += OnError;
+        SignalRService.TicketCreated += OnTicketCreated;
+        SignalRService.TicketUpdated += OnTicketUpdated;
+        
+        // Load existing tickets
+        await LoadTickets();
+    }
+
+    private async Task LoadTickets()
+    {
+        try
+        {
+            var response = await APIService.GetTicketsAsync();
+            if (response.IsSuccess && response.Data != null)
+            {
+                tickets = response.Data.ToList();
+            }
+        }
+        catch (Exception ex)
+        {
+            Logger.LogError(ex, "Fejl ved indlæsning af tickets");
+        }
+    }
+
+    private void SelectTicket(string ticketId, string ticketNumber)
+    {
+        selectedTicketId = ticketId;
+        selectedTicketNumber = ticketNumber;
+        StateHasChanged();
+    }
+
+    private void LeaveChat()
+    {
+        selectedTicketId = string.Empty;
+        selectedTicketNumber = string.Empty;
+        StateHasChanged();
+    }
+
+    private async Task AssignTicket()
+    {
+        if (string.IsNullOrEmpty(selectedTicketId)) return;
+
+        try
+        {
+            var response = await APIService.AssignTicketAsync(selectedTicketId, demoSupportId);
+            if (response.IsSuccess)
+            {
+                Logger.LogInformation("Ticket {TicketId} tildelt til {SupportId}", selectedTicketId, demoSupportId);
+                await LoadTickets(); // Refresh ticket list
+            }
+        }
+        catch (Exception ex)
+        {
+            Logger.LogError(ex, "Fejl ved tildeling af ticket");
+        }
+    }
+
+    private async Task CloseTicket()
+    {
+        if (string.IsNullOrEmpty(selectedTicketId)) return;
+
+        try
+        {
+            var response = await APIService.CloseTicketAsync(selectedTicketId, "Ticket løst via demo");
+            if (response.IsSuccess)
+            {
+                Logger.LogInformation("Ticket {TicketId} lukket", selectedTicketId);
+                await LoadTickets(); // Refresh ticket list
+                LeaveChat(); // Leave chat after closing
+            }
+        }
+        catch (Exception ex)
+        {
+            Logger.LogError(ex, "Fejl ved lukning af ticket");
+        }
+    }
+
+    private async Task OnTicketCreated(string ticketId, string ticketNumber, string title, string serviceType, DateTime timestamp)
+    {
+        // Add new ticket to list
+        var newTicket = new TicketGetDto
+        {
+            Id = ticketId,
+            TicketNumber = ticketNumber,
+            Title = title,
+            ServiceType = serviceType,
+            Status = "Open",
+            Priority = "Medium",
+            CreatedAt = timestamp
+        };
+        
+        tickets.Insert(0, newTicket);
+        await InvokeAsync(StateHasChanged);
+    }
+
+    private async Task OnTicketUpdated(string ticketId, string status, string priority, DateTime timestamp)
+    {
+        // Update ticket in list
+        var ticket = tickets.FirstOrDefault(t => t.Id == ticketId);
+        if (ticket != null)
+        {
+            ticket.Status = status;
+            ticket.Priority = priority;
+            ticket.UpdatedAt = timestamp;
+            await InvokeAsync(StateHasChanged);
+        }
+    }
+
+    private async Task OnConnected(string message)
+    {
+        Logger.LogInformation("SignalR forbundet: {Message}", message);
+        await InvokeAsync(StateHasChanged);
+    }
+
+    private async Task OnError(string message)
+    {
+        Logger.LogError("SignalR fejl: {Message}", message);
+        await InvokeAsync(StateHasChanged);
+    }
+
+    public async ValueTask DisposeAsync()
+    {
+        await SignalRService.DisposeAsync();
+    }
+}
+
+<style>
+    .demo-container {
+        max-width: 1400px;
+        margin: 0 auto;
+        padding: 2rem;
+    }
+
+    .demo-header {
+        text-align: center;
+        margin-bottom: 3rem;
+        padding: 2rem;
+        background: linear-gradient(135deg, #28a745 0%, #20c997 100%);
+        color: white;
+        border-radius: 12px;
+        box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+    }
+
+    .demo-header h1 {
+        margin-bottom: 1rem;
+        font-size: 2.5rem;
+        font-weight: 700;
+    }
+
+    .demo-description {
+        font-size: 1.1rem;
+        opacity: 0.9;
+        margin: 0;
+    }
+
+    .support-dashboard {
+        display: grid;
+        grid-template-columns: 1fr 2fr;
+        gap: 2rem;
+        height: 600px;
+    }
+
+    .ticket-list-section {
+        background-color: #f8f9fa;
+        border-radius: 12px;
+        padding: 1.5rem;
+        overflow-y: auto;
+    }
+
+    .ticket-list-section h3 {
+        margin-bottom: 1rem;
+        color: #495057;
+    }
+
+    .ticket-list {
+        display: flex;
+        flex-direction: column;
+        gap: 0.75rem;
+    }
+
+    .ticket-item {
+        background-color: white;
+        border: 1px solid #dee2e6;
+        border-radius: 8px;
+        padding: 1rem;
+        cursor: pointer;
+        transition: all 0.2s;
+    }
+
+    .ticket-item:hover {
+        border-color: #007bff;
+        box-shadow: 0 2px 4px rgba(0, 123, 255, 0.1);
+    }
+
+    .ticket-item.selected {
+        border-color: #007bff;
+        background-color: #e7f3ff;
+    }
+
+    .ticket-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        margin-bottom: 0.5rem;
+    }
+
+    .ticket-number {
+        font-weight: 600;
+        color: #007bff;
+    }
+
+    .ticket-priority {
+        padding: 0.25rem 0.5rem;
+        border-radius: 4px;
+        font-size: 0.8rem;
+        font-weight: 600;
+        text-transform: uppercase;
+    }
+
+    .priority-low {
+        background-color: #d4edda;
+        color: #155724;
+    }
+
+    .priority-medium {
+        background-color: #fff3cd;
+        color: #856404;
+    }
+
+    .priority-high {
+        background-color: #f8d7da;
+        color: #721c24;
+    }
+
+    .priority-critical {
+        background-color: #f5c6cb;
+        color: #721c24;
+    }
+
+    .ticket-title {
+        font-weight: 600;
+        margin-bottom: 0.5rem;
+        color: #495057;
+    }
+
+    .ticket-meta {
+        display: flex;
+        justify-content: space-between;
+        font-size: 0.9rem;
+        color: #6c757d;
+    }
+
+    .no-tickets {
+        text-align: center;
+        padding: 2rem;
+        color: #6c757d;
+    }
+
+    .chat-section {
+        background-color: #fff;
+        border-radius: 12px;
+        box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+        overflow: hidden;
+        display: flex;
+        flex-direction: column;
+    }
+
+    .chat-controls {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        padding: 1rem 2rem;
+        background-color: #f8f9fa;
+        border-bottom: 1px solid #dee2e6;
+    }
+
+    .chat-controls h3 {
+        margin: 0;
+        color: #495057;
+    }
+
+    .chat-actions {
+        display: flex;
+        gap: 0.5rem;
+    }
+
+    .no-chat-selected {
+        display: flex;
+        flex-direction: column;
+        justify-content: center;
+        align-items: center;
+        height: 100%;
+        text-align: center;
+        color: #6c757d;
+    }
+
+    .no-chat-selected h4 {
+        margin-bottom: 1rem;
+    }
+
+    .demo-info {
+        background-color: #e9ecef;
+        padding: 1.5rem;
+        border-radius: 8px;
+        border-left: 4px solid #28a745;
+        margin-top: 2rem;
+    }
+
+    .demo-info h4 {
+        color: #495057;
+        margin-bottom: 1rem;
+    }
+
+    .demo-info ul {
+        margin: 0;
+        padding-left: 1.5rem;
+    }
+
+    .demo-info li {
+        margin-bottom: 0.5rem;
+        color: #6c757d;
+    }
+
+    .text-success {
+        color: #28a745 !important;
+    }
+
+    .text-danger {
+        color: #dc3545 !important;
+    }
+
+    .btn {
+        padding: 0.5rem 1rem;
+        border-radius: 6px;
+        font-weight: 600;
+        text-decoration: none;
+        display: inline-block;
+        transition: all 0.2s;
+        border: none;
+        cursor: pointer;
+    }
+
+    .btn-sm {
+        padding: 0.375rem 0.75rem;
+        font-size: 0.875rem;
+    }
+
+    .btn-success {
+        background-color: #28a745;
+        color: white;
+    }
+
+    .btn-success:hover {
+        background-color: #218838;
+    }
+
+    .btn-warning {
+        background-color: #ffc107;
+        color: #212529;
+    }
+
+    .btn-warning:hover {
+        background-color: #e0a800;
+    }
+
+    .btn-outline-secondary {
+        color: #6c757d;
+        border: 1px solid #6c757d;
+        background-color: transparent;
+    }
+
+    .btn-outline-secondary:hover {
+        color: #fff;
+        background-color: #6c757d;
+        border-color: #6c757d;
+    }
+</style>

@@ -1,0 +1,40 @@
+meta {
+  name: Tjekker om API'en kører korrekt.
+  type: http
+  seq: 1
+    tags: [
+    Status
+  ]
+}
+
+get {
+  url: {{baseUrl}}/api/Status/healthcheck
+  body: none
+  auth: none
+}
+
+headers {
+  Authorization: {{apiKey}}
+}
+
+tests {
+  // Test status kode
+  test("Status kode skal være 200 OK", function() {
+    expect(res.status).to.equal(200);
+  });
+
+  // Test at responset ikke er tomt
+  test("Response skal ikke være tom", function() {
+    expect(res.body).to.not.be.empty;
+  });
+
+  // Test at responset har en status egenskab
+  test("Response skal have status egenskab", function() {
+    expect(res.body).to.have.property("status");
+  });
+
+  // Test response tid
+  test("Response tid skal være under 1 sekund", function() {
+    expect(res.responseTime).to.be.lessThan(1000);
+  });
+}

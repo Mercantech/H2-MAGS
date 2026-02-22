@@ -1,0 +1,22 @@
+meta {
+  name: Henter alle rum fra systemet.
+  type: http
+  seq: 1
+}
+
+get {
+  url: {{baseUrl}}/api/Rooms
+  body: none
+  auth: none
+}
+
+headers {
+  Authorization: Bearer {{JWT-Admin}}
+}
+
+tests {
+  // Test status kode
+  test("Status kode skal være 200 OK", function() {
+    expect(res.status).to.equal(200);
+  });
+}

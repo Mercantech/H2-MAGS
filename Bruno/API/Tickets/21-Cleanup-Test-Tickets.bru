@@ -1,0 +1,48 @@
+meta {
+  name: Cleanup Test Tickets
+  type: http
+  seq: 21
+  description: |
+    Rydder op i test tickets efter test kørsel.
+    Dette sikrer at test data ikke påvirker produktion.
+    
+    Features tested:
+    - Ticket sletning
+    - Bulk operations
+    - Cleanup procedures
+    - Test data management
+}
+
+delete {
+  url: {{baseUrl}}/cleanup
+  query: {
+    testData: true
+    olderThan: "2025-01-01"
+  }
+  auth: bearer
+}
+
+auth:bearer {
+  token: {{authToken}}
+}
+
+tests {
+  test("Status code is 200 OK", function() {
+    expect(res.getStatus()).to.equal(200);
+  });
+  
+  test("Response contains cleanup results", function() {
+    expect(res.getBody()).to.have.property("data");
+    expect(res.getBody().data).to.have.property("deletedCount");
+    expect(res.getBody().data).to.have.property("deletedTickets");
+  });
+  
+  test("Cleanup completed successfully", function() {
+    expect(res.getBody().data).to.have.property("success");
+    expect(res.getBody().data.success).to.equal(true);
+  });
+  
+  test("Response time is acceptable", function() {
+    expect(res.getResponseTime()).to.be.below(5000);
+  });
+}

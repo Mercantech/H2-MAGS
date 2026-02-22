@@ -1,0 +1,22 @@
+meta {
+  name: Henter alle bookinger for den nuværende bruger.
+  type: http
+  seq: 5
+}
+
+get {
+  url: {{baseUrl}}/api/Bookings/mine
+  body: none
+  auth: none
+}
+
+headers {
+  Authorization: Bearer {{JWT-User}}
+}
+
+tests {
+  // Test status kode
+  test("Status kode skal være 200 No Content", function() {
+    expect(res.status).to.equal(200);
+  });
+}

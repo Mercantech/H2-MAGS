@@ -1,0 +1,90 @@
+meta {
+  name: Get Ticket Dashboard
+  type: http
+  seq: 20
+  description: |
+    Henter dashboard data for ticket systemet.
+    Dette simulerer en manager der skal se oversigt over ticket systemet.
+    
+    Features tested:
+    - Dashboard metrics
+    - Performance data
+    - SLA compliance
+    - Trend analysis
+}
+
+get {
+  url: {{baseUrl}}/dashboard
+  query: {
+    startDate: "2025-01-01"
+    endDate: "2025-12-31"
+    groupBy: "day"
+  }
+  auth: bearer
+}
+
+auth:bearer {
+  token: {{authToken}}
+}
+
+tests {
+  test("Status code is 200 OK", function() {
+    expect(res.getStatus()).to.equal(200);
+  });
+  
+  test("Response contains dashboard data", function() {
+    expect(res.getBody()).to.have.property("data");
+    expect(res.getBody().data).to.be.an("object");
+  });
+  
+  test("Dashboard contains ticket counts", function() {
+    const dashboard = res.getBody().data;
+    expect(dashboard).to.have.property("totalTickets");
+    expect(dashboard).to.have.property("openTickets");
+    expect(dashboard).to.have.property("closedTickets");
+    expect(dashboard).to.have.property("inProgressTickets");
+    expect(dashboard).to.have.property("resolvedTickets");
+  });
+  
+  test("Dashboard contains priority distribution", function() {
+    const dashboard = res.getBody().data;
+    expect(dashboard).to.have.property("priorityDistribution");
+    expect(dashboard.priorityDistribution).to.be.an("object");
+    
+    // Check that priority counts are numbers
+    Object.values(dashboard.priorityDistribution).forEach(count => {
+      expect(count).to.be.a("number");
+      expect(count).to.be.at.least(0);
+    });
+  });
+  
+  test("Dashboard contains service type distribution", function() {
+    const dashboard = res.getBody().data;
+    expect(dashboard).to.have.property("serviceTypeDistribution");
+    expect(dashboard.serviceTypeDistribution).to.be.an("object");
+  });
+  
+  test("Dashboard contains performance metrics", function() {
+    const dashboard = res.getBody().data;
+    expect(dashboard).to.have.property("averageResolutionTime");
+    expect(dashboard).to.have.property("slaCompliance");
+    expect(dashboard).to.have.property("firstResponseTime");
+  });
+  
+  test("Dashboard contains recent activity", function() {
+    const dashboard = res.getBody().data;
+    expect(dashboard).to.have.property("ticketsCreatedToday");
+    expect(dashboard).to.have.property("ticketsClosedToday");
+    expect(dashboard).to.have.property("ticketsUpdatedToday");
+  });
+  
+  test("Dashboard contains trend data", function() {
+    const dashboard = res.getBody().data;
+    expect(dashboard).to.have.property("ticketTrends");
+    expect(dashboard.ticketTrends).to.be.an("array");
+  });
+  
+  test("Response time is acceptable", function() {
+    expect(res.getResponseTime()).to.be.below(3000);
+  });
+}

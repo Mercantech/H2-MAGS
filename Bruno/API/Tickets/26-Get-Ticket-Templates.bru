@@ -1,0 +1,83 @@
+meta {
+  name: Get Ticket Templates
+  type: http
+  seq: 26
+  description: |
+    Henter ticket templates for forskellige service typer.
+    Dette simulerer en bruger der skal se tilgængelige templates.
+    
+    Features tested:
+    - Template listing
+    - Service type filtering
+    - Template validation
+    - User access control
+}
+
+get {
+  url: {{baseUrl}}/templates
+  query: {
+    serviceType: "Cleaning"
+    category: "Service Request"
+    active: true
+  }
+  auth: bearer
+}
+
+auth:bearer {
+  token: {{authToken}}
+}
+
+tests {
+  test("Status code is 200 OK", function() {
+    expect(res.getStatus()).to.equal(200);
+  });
+  
+  test("Response contains templates array", function() {
+    expect(res.getBody()).to.have.property("data");
+    expect(res.getBody().data).to.be.an("array");
+  });
+  
+  test("Templates have required fields", function() {
+    if (res.getBody().data.length > 0) {
+      const template = res.getBody().data[0];
+      expect(template).to.have.property("id");
+      expect(template).to.have.property("name");
+      expect(template).to.have.property("description");
+      expect(template).to.have.property("serviceType");
+      expect(template).to.have.property("category");
+      expect(template).to.have.property("template");
+      expect(template).to.have.property("isActive");
+    }
+  });
+  
+  test("Templates are filtered by service type", function() {
+    res.getBody().data.forEach(template => {
+      expect(template.serviceType).to.equal("Cleaning");
+    });
+  });
+  
+  test("Templates are filtered by category", function() {
+    res.getBody().data.forEach(template => {
+      expect(template.category).to.equal("Service Request");
+    });
+  });
+  
+  test("Templates are active", function() {
+    res.getBody().data.forEach(template => {
+      expect(template.isActive).to.equal(true);
+    });
+  });
+  
+  test("Templates contain valid template data", function() {
+    res.getBody().data.forEach(template => {
+      expect(template.template).to.be.an("object");
+      expect(template.template).to.have.property("title");
+      expect(template.template).to.have.property("description");
+      expect(template.template).to.have.property("priority");
+    });
+  });
+  
+  test("Response time is acceptable", function() {
+    expect(res.getResponseTime()).to.be.below(2000);
+  });
+}

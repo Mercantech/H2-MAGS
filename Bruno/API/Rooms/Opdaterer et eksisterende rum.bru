@@ -1,0 +1,47 @@
+meta {
+  name: Opdaterer et eksisterende rum.
+  type: http
+  seq: 4
+}
+
+put {
+  url: {{baseUrl}}/api/Rooms/:id
+  body: json
+  auth: none
+}
+
+params:path {
+  id: {{room-id}}
+}
+
+headers {
+  Authorization: Bearer {{JWT-Admin}}
+}
+
+body:json {
+  {
+    "id": "{{room-id}}",
+    "number": "999",
+    "capacity": 2,
+    "numberOfBeds": 1,
+    "roomType": "Family Room",
+    "pricePerNight": "700",
+    "floorNumber": 9,
+    "hasBalcony": false,
+    "hasSeaView": true,
+    "hasWifi": false,
+    "hasAirConditioning": false,
+    "hasMinibar": false,
+    "isAccessible": false,
+    "description": "New dummy room",
+    "squareMeters": 43,
+    "hotelId": "{{hotel-id}}"
+  }
+}
+
+tests {
+  // Test status kode
+  test("Status kode skal være 204 No Content", function() {
+    expect(res.status).to.equal(204);
+  });
+}

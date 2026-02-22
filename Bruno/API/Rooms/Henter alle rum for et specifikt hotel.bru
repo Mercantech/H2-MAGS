@@ -1,0 +1,26 @@
+meta {
+  name: Henter alle rum for et specifikt hotel.
+  type: http
+  seq: 5
+}
+
+get {
+  url: {{baseUrl}}/api/Rooms/hotel/:hotelId
+  body: none
+  auth: none
+}
+
+params:path {
+  hotelId: {{hotel-id}}
+}
+
+headers {
+  Authorization: {{apiKey}}
+}
+
+tests {
+  // Test status kode
+  test("Status kode skal være 200 No Content", function() {
+    expect(res.status).to.equal(200);
+  });
+}

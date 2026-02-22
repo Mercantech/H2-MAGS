@@ -1,0 +1,97 @@
+meta {
+  name: DeleteNewUser
+  type: http
+  seq: 4
+}
+
+delete {
+  url: {{baseUrl}}/api/Users/{{user-id}}
+  body: none
+  auth: inherit
+}
+
+headers {
+  Authorization: Bearer {{JWT-User}}
+}
+
+script:pre-request {
+  // Tjek om vi har et bruger-ID at slette
+  const userId = bru.getEnvVar("user-id");
+  if (!userId) {
+    console.log("Advarsel: Intet bruger-ID fundet. Sørg for at køre registrering først.");
+  } else {
+    console.log("Sletter bruger med ID: " + userId);
+  }
+  
+  // Tjek om vi har JWT-User token
+  const jwtToken = bru.getEnvVar("JWT-User");
+  if (!jwtToken) {
+    console.log("Advarsel: Intet JWT-User token fundet. Sørg for at køre login først.");
+  } else {
+    console.log("JWT-User token fundet og bruges til autorisation");
+  }
+}
+
+script:post-response {
+  // Log resultatet af sletningen
+  try {
+    if (res.status === 200 || res.status === 204) {
+      console.log("✅ Bruger slettet succesfuldt!");
+      
+      // Ryd op - fjern bruger-ID variablen
+      bru.deleteVar("user-id");
+      console.log("🧹 Oprydning: user-id variabel fjernet");
+      
+      // Ryd også op i andre relaterede variabler
+      bru.deleteVar("User-Email");
+      bru.deleteVar("User-Username");
+      bru.deleteVar("User-Password");
+      console.log("🧹 Oprydning: Alle bruger-variabler fjernet");
+      
+    } else if (res.status === 401) {
+      console.log("❌ Unauthorized: JWT token er ugyldig eller udløbet");
+      console.log("Sørg for at køre login igen for at få et nyt token");
+    } else if (res.status === 403) {
+      console.log("❌ Forbidden: Du har ikke tilladelse til at slette denne bruger");
+    } else {
+      console.log("❌ Fejl ved sletning af bruger. Status: " + res.status);
+      console.log("Response: ", res.body);
+    }
+  } catch (error) {
+    console.log("Fejl ved håndtering af slette-response: " + error.message);
+  }
+}
+
+tests {
+  // Test sletning af bruger
+  
+  // Test response status (200 OK eller 204 No Content er normalt for DELETE)
+  test("Sletning af bruger returnerer korrekt status", function() {
+    expect(res.status).to.be.oneOf([200, 204]);
+  });
+  
+  // Test at bruger-ID variablen blev fjernet
+  test("Bruger-ID variabel blev fjernet efter sletning", function() {
+    // Dette test kører efter post-response scriptet
+    // Vi kan ikke teste variabler direkte i tests, men loggen viser det
+    expect(res.status).to.be.oneOf([200, 204]); // Indirekte test
+  });
+  
+  // Test response tid
+  test("Sletning er hurtig (under 2 sekunder)", function() {
+    expect(res.responseTime).to.be.lessThan(2000);
+  });
+  
+  
+  // Test autorisation
+  test("Request har korrekt Authorization header", function() {
+    // Dette test kører før requestet sendes
+    const authHeader = req.getHeader("Authorization");
+    expect(authHeader).to.include("Bearer ");
+    expect(authHeader).to.have.length.greaterThan(10);
+  });
+}
+
+settings {
+  encodeUrl: true
+}

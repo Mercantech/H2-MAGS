@@ -1,0 +1,76 @@
+meta {
+  name: Update Ticket Status
+  type: http
+  seq: 7
+  description: |
+    Opdaterer ticket status og andre felter.
+    Dette simulerer en support medarbejder der opdaterer ticket information.
+    
+    Features tested:
+    - Status opdatering
+    - Priority opdatering
+    - Work notes tilføjelse
+    - Change tracking
+}
+
+put {
+  url: {{baseUrl}}/{{ticketId}}
+  body: json
+  auth: bearer
+}
+
+auth:bearer {
+  token: {{authToken}}
+}
+
+body:json {
+  {
+    "status": "InProgress",
+    "priority": "High",
+    "workNotes": "Rengøringspersonalet er blevet kontaktet og vil være der inden for 1 time. Værelse 101 er markeret som prioritet.",
+    "dueDate": "2025-01-15T18:00:00Z"
+  }
+}
+
+tests {
+  test("Status code is 200 OK", function() {
+    expect(res.getStatus()).to.equal(200);
+  });
+  
+  test("Response contains updated ticket data", function() {
+    expect(res.getBody()).to.have.property("data");
+    expect(res.getBody().data).to.have.property("id");
+    expect(res.getBody().data.id).to.equal(ticketId);
+  });
+  
+  test("Ticket status is updated", function() {
+    expect(res.getBody().data).to.have.property("status");
+    expect(res.getBody().data.status).to.equal("InProgress");
+  });
+  
+  test("Ticket priority is updated", function() {
+    expect(res.getBody().data).to.have.property("priority");
+    expect(res.getBody().data.priority).to.equal("High");
+  });
+  
+  test("Work notes are updated", function() {
+    expect(res.getBody().data).to.have.property("workNotes");
+    expect(res.getBody().data.workNotes).to.include("rengøringspersonalet");
+  });
+  
+  test("Due date is set", function() {
+    expect(res.getBody().data).to.have.property("dueDate");
+    expect(res.getBody().data.dueDate).to.not.be.null;
+  });
+  
+  test("Ticket updatedAt is recent", function() {
+    const updatedAt = new Date(res.getBody().data.updatedAt);
+    const now = new Date();
+    const diffMinutes = (now - updatedAt) / (1000 * 60);
+    expect(diffMinutes).to.be.below(5);
+  });
+  
+  test("Response time is acceptable", function() {
+    expect(res.getResponseTime()).to.be.below(2000);
+  });
+}

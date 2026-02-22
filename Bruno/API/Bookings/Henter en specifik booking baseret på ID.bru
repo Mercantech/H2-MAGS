@@ -1,0 +1,26 @@
+meta {
+  name: Henter en specifik booking baseret på ID.
+  type: http
+  seq: 3
+}
+
+get {
+  url: {{baseUrl}}/api/Bookings/:id
+  body: none
+  auth: none
+}
+
+params:path {
+  id: {{booking-id}}
+}
+
+headers {
+  Authorization: Bearer {{JWT-Admin}}
+}
+
+tests {
+  // Test status kode
+  test("Status kode skal være 200 No Content", function() {
+    expect(res.status).to.equal(200);
+  });
+}

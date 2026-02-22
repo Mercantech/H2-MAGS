@@ -1,0 +1,58 @@
+meta {
+  name: Henter login forsøg status for en email adresse. Kun til administratorer.
+  type: http
+  seq: 12
+}
+
+get {
+  url: {{baseUrl}}/api/Users/login-status/{{User-Email}}
+  body: none
+  auth: bearer
+}
+
+headers {
+  Authorization: Bearer {{JWT-Admin}}
+}
+
+auth:bearer {
+  token: {{JWT-Admin}}
+}
+
+tests {
+  // Test response status
+  test("LoginAttempts melder 200 og detaljer omkring vores nye bruger", function() {
+    expect(res.status).to.equal(200);
+  });
+  
+  // Test response body struktur
+  test("Response body har korrekt struktur", function() {
+    expect(res.body).to.have.property("email");
+    expect(res.body).to.have.property("isLockedOut");
+    expect(res.body).to.have.property("failedAttempts");
+    expect(res.body).to.have.property("lastAttempt");
+    expect(res.body).to.have.property("lockoutUntil");
+    expect(res.body).to.have.property("remainingLockoutSeconds");
+  });
+  
+  // Test at failedAttempts er højere end 0
+  test("Failed attempts er højere end 0", function() {
+    expect(res.body.failedAttempts).to.be.greaterThan(0);
+  });
+  
+  // Test response tid
+  test("Hentning er hurtig (under 2 sekunder)", function() {
+    expect(res.responseTime).to.be.lessThan(2000);
+  });
+  
+  // Test autorisation
+  test("Request har korrekt Authorization header", function() {
+    const authHeader = req.getHeader("Authorization");
+    expect(authHeader).to.include("Bearer ");
+    expect(authHeader).to.have.length.greaterThan(10);
+  });
+}
+
+docs {
+  name: Henter login forsøg status for en email adresse. Kun til administratorer.
+  description: Henter login forsøg status for en specifik email adresse (succesfuld test)
+}

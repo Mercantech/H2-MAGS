@@ -1,0 +1,87 @@
+meta {
+  name: Get Ticket Reports
+  type: http
+  seq: 23
+  description: |
+    Henter rapporter for ticket systemet.
+    Dette simulerer en manager der skal generere rapporter.
+    
+    Features tested:
+    - Report generation
+    - Data export
+    - Format validation
+    - Performance metrics
+}
+
+get {
+  url: {{baseUrl}}/reports
+  query: {
+    reportType: "summary"
+    startDate: "2025-01-01"
+    endDate: "2025-12-31"
+    format: "json"
+    includeCharts: true
+  }
+  auth: bearer
+}
+
+auth:bearer {
+  token: {{authToken}}
+}
+
+tests {
+  test("Status code is 200 OK", function() {
+    expect(res.getStatus()).to.equal(200);
+  });
+  
+  test("Response contains report data", function() {
+    expect(res.getBody()).to.have.property("data");
+    expect(res.getBody().data).to.be.an("object");
+  });
+  
+  test("Report contains summary data", function() {
+    const report = res.getBody().data;
+    expect(report).to.have.property("summary");
+    expect(report.summary).to.have.property("totalTickets");
+    expect(report.summary).to.have.property("resolvedTickets");
+    expect(report.summary).to.have.property("averageResolutionTime");
+  });
+  
+  test("Report contains performance data", function() {
+    const report = res.getBody().data;
+    expect(report).to.have.property("performance");
+    expect(report.performance).to.have.property("slaCompliance");
+    expect(report.performance).to.have.property("firstResponseTime");
+    expect(report.performance).to.have.property("resolutionRate");
+  });
+  
+  test("Report contains trend data", function() {
+    const report = res.getBody().data;
+    expect(report).to.have.property("trends");
+    expect(report.trends).to.have.property("ticketVolume");
+    expect(report.trends).to.have.property("resolutionTime");
+    expect(report.trends).to.have.property("slaCompliance");
+  });
+  
+  test("Report contains service breakdown", function() {
+    const report = res.getBody().data;
+    expect(report).to.have.property("serviceBreakdown");
+    expect(report.serviceBreakdown).to.be.an("object");
+  });
+  
+  test("Report contains priority breakdown", function() {
+    const report = res.getBody().data;
+    expect(report).to.have.property("priorityBreakdown");
+    expect(report.priorityBreakdown).to.be.an("object");
+  });
+  
+  test("Report contains charts data", function() {
+    const report = res.getBody().data;
+    expect(report).to.have.property("charts");
+    expect(report.charts).to.be.an("object");
+  });
+  
+  test("Response time is acceptable", function() {
+    expect(res.getResponseTime()).to.be.below(5000);
+  });
+}

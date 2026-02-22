@@ -1,0 +1,88 @@
+meta {
+  name: Get Ticket SLA Information
+  type: http
+  seq: 27
+  description: |
+    Henter SLA information for tickets.
+    Dette simulerer en support medarbejder der skal se SLA status.
+    
+    Features tested:
+    - SLA compliance
+    - Response time tracking
+    - Resolution time tracking
+    - Priority-based SLA
+}
+
+get {
+  url: {{baseUrl}}/{{ticketId}}/sla
+  auth: bearer
+}
+
+auth:bearer {
+  token: {{authToken}}
+}
+
+tests {
+  test("Status code is 200 OK", function() {
+    expect(res.getStatus()).to.equal(200);
+  });
+  
+  test("Response contains SLA data", function() {
+    expect(res.getBody()).to.have.property("data");
+    expect(res.getBody().data).to.be.an("object");
+  });
+  
+  test("SLA contains ticket information", function() {
+    const sla = res.getBody().data;
+    expect(sla).to.have.property("ticketId");
+    expect(sla).to.have.property("ticketNumber");
+    expect(sla).to.have.property("priority");
+    expect(sla).to.have.property("serviceType");
+  });
+  
+  test("SLA contains time information", function() {
+    const sla = res.getBody().data;
+    expect(sla).to.have.property("createdAt");
+    expect(sla).to.have.property("dueDate");
+    expect(sla).to.have.property("slaHours");
+    expect(sla).to.have.property("remainingHours");
+  });
+  
+  test("SLA contains compliance information", function() {
+    const sla = res.getBody().data;
+    expect(sla).to.have.property("isCompliant");
+    expect(sla).to.have.property("compliancePercentage");
+    expect(sla).to.have.property("slaStatus");
+  });
+  
+  test("SLA contains response time information", function() {
+    const sla = res.getBody().data;
+    expect(sla).to.have.property("firstResponseTime");
+    expect(sla).to.have.property("firstResponseSla");
+    expect(sla).to.have.property("firstResponseCompliant");
+  });
+  
+  test("SLA contains resolution time information", function() {
+    const sla = res.getBody().data;
+    expect(sla).to.have.property("resolutionTime");
+    expect(sla).to.have.property("resolutionSla");
+    expect(sla).to.have.property("resolutionCompliant");
+  });
+  
+  test("SLA hours are calculated correctly", function() {
+    const sla = res.getBody().data;
+    const priority = sla.priority;
+    const expectedHours = {
+      "Critical": 2,
+      "High": 8,
+      "Medium": 24,
+      "Low": 72
+    };
+    
+    expect(sla.slaHours).to.equal(expectedHours[priority]);
+  });
+  
+  test("Response time is acceptable", function() {
+    expect(res.getResponseTime()).to.be.below(2000);
+  });
+}

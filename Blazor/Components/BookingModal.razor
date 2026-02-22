@@ -1,0 +1,315 @@
+@using DomainModels
+@using Blazor.Services
+@inject APIService ApiService
+@inject AuthenticationService AuthService
+@inject NavigationManager Navigation
+@inject IJSRuntime JSRuntime
+
+<div class="modal fade @(IsVisible ? "show" : "")" style="display: @(IsVisible ? "block" : "none")" tabindex="-1" role="dialog">
+    <div class="modal-dialog modal-lg" role="document">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">
+                    <i class="bi bi-calendar-check me-2"></i>
+                    Bekræft din booking
+                </h5>
+                <button type="button" class="btn-close" @onclick="CloseModal" aria-label="Luk"></button>
+            </div>
+            <div class="modal-body">
+                @if (SelectedRoom != null)
+                {
+                    <!-- Booking Summary -->
+                    <div class="card mb-4">
+                        <div class="card-header">
+                            <h6 class="mb-0">
+                                <i class="bi bi-info-circle me-2"></i>
+                                Booking oversigt
+                            </h6>
+                        </div>
+                        <div class="card-body">
+                            <div class="row">
+                                <div class="col-md-6">
+                                    <div class="booking-info">
+                                        <label>Hotel:</label>
+                                        <span>@SelectedRoom.HotelName</span>
+                                    </div>
+                                    <div class="booking-info">
+                                        <label>Rum:</label>
+                                        <span>@SelectedRoom.Number (@SelectedRoom.RoomType)</span>
+                                    </div>
+                                    <div class="booking-info">
+                                        <label>Kapacitet:</label>
+                                        <span>@SelectedRoom.Capacity personer</span>
+                                    </div>
+                                </div>
+                                <div class="col-md-6">
+                                    <div class="booking-info">
+                                        <label>Ankomst:</label>
+                                        <span>@CheckInDate.ToString("dd/MM/yyyy")</span>
+                                    </div>
+                                    <div class="booking-info">
+                                        <label>Afrejse:</label>
+                                        <span>@CheckOutDate.ToString("dd/MM/yyyy")</span>
+                                    </div>
+                                    <div class="booking-info">
+                                        <label>Antal nætter:</label>
+                                        <span>@NumberOfNights</span>
+                                    </div>
+                                </div>
+                            </div>
+                            <hr>
+                            <div class="row">
+                                <div class="col-md-6">
+                                    <div class="booking-info">
+                                        <label>Pris per nat:</label>
+                                        <span>@SelectedRoom.PricePerNight.ToString("C")</span>
+                                    </div>
+                                </div>
+                                <div class="col-md-6">
+                                    <div class="booking-info">
+                                        <label class="fw-bold">Total pris:</label>
+                                        <span class="fw-bold text-primary fs-5">@SelectedRoom.TotalPrice.ToString("C")</span>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Booking Form -->
+                    <EditForm Model="@bookingForm" OnValidSubmit="@HandleBookingSubmit">
+                        <DataAnnotationsValidator />
+                        <ValidationSummary class="text-danger" />
+
+                        <div class="row">
+                            <div class="col-md-6 mb-3">
+                                <label class="form-label">Antal gæster *</label>
+                                <input type="number" @bind="bookingForm.NumberOfGuests" class="form-control" min="1" max="@SelectedRoom.Capacity" required />
+                                <div class="form-text">Maksimalt @SelectedRoom.Capacity personer</div>
+                            </div>
+                        </div>
+
+                        <div class="mb-3">
+                            <label class="form-label">Særlige ønsker</label>
+                            <textarea @bind="bookingForm.SpecialRequests" class="form-control" rows="3" 
+                                      placeholder="Indtast eventuelle særlige ønsker eller kommentarer til din booking..."></textarea>
+                            <div class="form-text">Maksimalt 500 tegn</div>
+                        </div>
+
+                        <!-- Terms and Conditions -->
+                        <div class="mb-3">
+                            <div class="form-check">
+                                <input class="form-check-input" type="checkbox" @bind="acceptTerms" id="acceptTerms" required>
+                                <label class="form-check-label" for="acceptTerms">
+                                    Jeg accepterer <a href="#" @onclick="ShowTerms">vilkår og betingelser</a> for booking
+                                </label>
+                            </div>
+                        </div>
+
+                        <!-- Error Message -->
+                        @if (!string.IsNullOrEmpty(errorMessage))
+                        {
+                            <div class="alert alert-danger" role="alert">
+                                <i class="bi bi-exclamation-triangle me-2"></i>
+                                @errorMessage
+                            </div>
+                        }
+
+                        <!-- Success Message -->
+                        @if (!string.IsNullOrEmpty(successMessage))
+                        {
+                            <div class="alert alert-success" role="alert">
+                                <i class="bi bi-check-circle me-2"></i>
+                                @successMessage
+                            </div>
+                        }
+                    </EditForm>
+                }
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" @onclick="CloseModal">
+                    <i class="bi bi-x-circle me-1"></i>
+                    Annuller
+                </button>
+                <button type="button" class="btn btn-primary" @onclick="SubmitBooking" disabled="@(isSubmitting || !acceptTerms)">
+                    @if (isSubmitting)
+                    {
+                        <span class="spinner-border spinner-border-sm me-2" role="status"></span>
+                        <span>Opretter booking...</span>
+                    }
+                    else
+                    {
+                        <i class="bi bi-calendar-check me-1"></i>
+                        <span>Bekræft booking</span>
+                    }
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+
+@if (IsVisible)
+{
+    <div class="modal-backdrop fade show"></div>
+}
+
+<style>
+    .modal.show {
+        display: block !important;
+    }
+
+    .modal-backdrop.show {
+        opacity: 0.5;
+    }
+
+    .booking-info {
+        margin-bottom: 0.75rem;
+    }
+
+    .booking-info label {
+        display: block;
+        font-weight: 600;
+        color: #6c757d;
+        font-size: 0.9rem;
+        margin-bottom: 0.25rem;
+    }
+
+    .booking-info span {
+        color: #212529;
+        font-size: 1rem;
+    }
+
+    .form-check-label a {
+        color: #0d6efd;
+        text-decoration: none;
+    }
+
+    .form-check-label a:hover {
+        text-decoration: underline;
+    }
+</style>
+
+@code {
+    [Parameter] public bool IsVisible { get; set; } = false;
+    [Parameter] public EventCallback OnClose { get; set; }
+    [Parameter] public EventCallback<BookingGetDto> OnBookingCreated { get; set; }
+
+    private RoomAvailabilityResultDto? SelectedRoom { get; set; }
+    private DateTime CheckInDate { get; set; }
+    private DateTime CheckOutDate { get; set; }
+    private int NumberOfNights { get; set; }
+    private bool acceptTerms = false;
+    private bool isSubmitting = false;
+    private string errorMessage = string.Empty;
+    private string successMessage = string.Empty;
+
+    private BookingPostDto bookingForm = new();
+
+    public void Show(RoomAvailabilityResultDto room, DateTime checkInDate, DateTime checkOutDate)
+    {
+        SelectedRoom = room;
+        CheckInDate = checkInDate;
+        CheckOutDate = checkOutDate;
+        NumberOfNights = (checkOutDate - checkInDate).Days;
+        
+        // Initialize booking form
+        bookingForm = new BookingPostDto
+        {
+            RoomId = room.Id,
+            StartDate = checkInDate,
+            EndDate = checkOutDate,
+            NumberOfGuests = room.Capacity,
+            SpecialRequests = string.Empty
+        };
+
+        // Reset state
+        acceptTerms = false;
+        errorMessage = string.Empty;
+        successMessage = string.Empty;
+        isSubmitting = false;
+
+        IsVisible = true;
+        StateHasChanged();
+    }
+
+    private async Task CloseModal()
+    {
+        IsVisible = false;
+        await OnClose.InvokeAsync();
+        StateHasChanged();
+    }
+
+    private async Task SubmitBooking()
+    {
+        await HandleBookingSubmit();
+    }
+
+    private async Task HandleBookingSubmit()
+    {
+        if (!acceptTerms)
+        {
+            errorMessage = "Du skal acceptere vilkår og betingelser for at fortsætte.";
+            return;
+        }
+
+        // Check if user is authenticated
+        if (!await AuthService.IsAuthenticatedAsync())
+        {
+            errorMessage = "Du skal være logget ind for at lave en booking.";
+            return;
+        }
+
+        isSubmitting = true;
+        errorMessage = string.Empty;
+        successMessage = string.Empty;
+        StateHasChanged();
+
+        try
+        {
+            // Get current user
+            var currentUser = await AuthService.GetCurrentUserAsync();
+            if (currentUser == null)
+            {
+                errorMessage = "Kunne ikke hente bruger information.";
+                return;
+            }
+
+            // Set user ID
+            bookingForm.UserId = currentUser.Id;
+
+            // Create booking
+            var createdBooking = await ApiService.CreateBookingAsync(bookingForm);
+            
+            if (createdBooking != null)
+            {
+                successMessage = "Booking oprettet succesfuldt!";
+                
+                // Notify parent component
+                await OnBookingCreated.InvokeAsync(createdBooking);
+                
+                // Close modal after a short delay
+                await Task.Delay(2000);
+                await CloseModal();
+            }
+            else
+            {
+                errorMessage = "Fejl ved oprettelse af booking. Prøv igen.";
+            }
+        }
+        catch (Exception ex)
+        {
+            errorMessage = "Fejl ved oprettelse af booking: " + ex.Message;
+            Console.WriteLine($"Booking error: {ex}");
+        }
+        finally
+        {
+            isSubmitting = false;
+            StateHasChanged();
+        }
+    }
+
+    private void ShowTerms()
+    {
+        // TODO: Implement terms and conditions modal or page
+        Console.WriteLine("Show terms and conditions");
+    }
+}

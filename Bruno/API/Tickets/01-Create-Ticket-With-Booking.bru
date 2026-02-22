@@ -1,0 +1,86 @@
+meta {
+  name: Create Ticket With Booking
+  type: http
+  seq: 1
+  description: |
+    Opretter et ticket relateret til en booking.
+    Dette simulerer en bruger der har booket et værelse og nu har brug for support.
+    
+    Workflow:
+    1. Først opretter vi en booking (hvis ikke eksisterer)
+    2. Derefter opretter vi et ticket relateret til bookingen
+    3. Verificerer at ticket er korrekt oprettet med booking reference
+}
+
+post {
+  url: {{baseUrl}}
+  body: json
+  auth: bearer
+}
+
+auth:bearer {
+  token: {{authToken}}
+}
+
+body:json {
+  {
+    "title": "Rengøring anmodet for værelse 101",
+    "description": "Hej, jeg har booket værelse 101 og vil gerne have det rengjort. Kan I sende rengøringspersonalet forbi?",
+    "serviceType": "Cleaning",
+    "category": "Service Request",
+    "subCategory": "Room Cleaning",
+    "priority": "Medium",
+    "bookingId": "{{bookingId}}",
+    "roomId": "{{roomId}}",
+    "hotelId": "{{hotelId}}",
+    "riskLevel": "Low",
+    "impact": "Low"
+  }
+}
+
+tests {
+  test("Status code is 201 Created", function() {
+    expect(res.getStatus()).to.equal(201);
+  });
+  
+  test("Response contains ticket data", function() {
+    expect(res.getBody()).to.have.property("data");
+    expect(res.getBody().data).to.have.property("id");
+    expect(res.getBody().data).to.have.property("ticketNumber");
+    expect(res.getBody().data).to.have.property("title");
+  });
+  
+  test("Ticket is linked to booking", function() {
+    expect(res.getBody().data).to.have.property("bookingId");
+    expect(res.getBody().data.bookingId).to.equal(bookingId);
+  });
+  
+  test("Ticket has correct service type", function() {
+    expect(res.getBody().data).to.have.property("serviceType");
+    expect(res.getBody().data.serviceType).to.equal("Cleaning");
+  });
+  
+  test("Ticket has correct priority", function() {
+    expect(res.getBody().data).to.have.property("priority");
+    expect(res.getBody().data.priority).to.equal("Medium");
+  });
+  
+  test("Ticket status is Open", function() {
+    expect(res.getBody().data).to.have.property("status");
+    expect(res.getBody().data.status).to.equal("Open");
+  });
+  
+  test("Ticket has requester information", function() {
+    expect(res.getBody().data).to.have.property("requesterId");
+    expect(res.getBody().data.requesterId).to.equal(userId);
+  });
+  
+  test("Response time is acceptable", function() {
+    expect(res.getResponseTime()).to.be.below(2000);
+  });
+}
+
+vars:pre-request {
+  // Set ticketId for use in subsequent requests
+  ticketId: res.getBody().data.id
+}

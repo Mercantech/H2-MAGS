@@ -1,0 +1,55 @@
+meta {
+  name: Get All Users - Success
+  type: http
+  seq: 13
+}
+
+get {
+  url: {{baseUrl}}/api/Users
+  body: none
+  auth: none
+}
+
+headers {
+  Authorization: Bearer {{JWT-Admin}}
+}
+
+tests {
+  // Test hentning af alle brugere
+  
+  // Test response status (200 OK)
+  test("Hentning af alle brugere returnerer korrekt status", function() {
+    expect(res.status).to.be.equal(200);
+  });
+  
+  // Test response tid
+  test("Hentning er hurtig (under 2 sekunder)", function() {
+    expect(res.responseTime).to.be.lessThan(2000);
+  });
+  
+  // Test autorisation
+  test("Request har korrekt Authorization header", function() {
+    const authHeader = req.getHeader("Authorization");
+    expect(authHeader).to.include("Bearer ");
+    expect(authHeader).to.have.length.greaterThan(10);
+  });
+  
+  // Test response body struktur
+  test("Response body er et array", function() {
+    expect(res.body.data).to.be.an("array");
+  });
+  
+  // Test at brugere har korrekt struktur
+  test("Brugere har korrekt struktur", function() {
+    if (res.body.length > 0) {
+      expect(res.body[0]).to.have.property("id");
+      expect(res.body[0]).to.have.property("email");
+      expect(res.body[0]).to.have.property("username");
+    }
+  });
+}
+
+docs {
+  name: Get All Users - Success
+  description: Henter alle brugere fra systemet (succesfuld test)
+}

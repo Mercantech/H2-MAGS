@@ -1,26 +1,45 @@
-#See https://aka.ms/customizecontainer to learn how to customize your debug container and how Visual Studio uses this Dockerfile to build your images for faster debugging.
+# See https://aka.ms/customizecontainer to learn how to customize your debug container and how Visual Studio uses this Dockerfile to build your images for faster debugging.
 
-FROM mcr.microsoft.com/dotnet/aspnet:8.0 AS base
-USER app
+# This stage is used when running from VS in fast mode (Default for Debug configuration)
+FROM mcr.microsoft.com/dotnet/aspnet:9.0 AS base
 WORKDIR /app
-EXPOSE 8080
-EXPOSE 8081
+EXPOSE 8045
 
-FROM mcr.microsoft.com/dotnet/sdk:8.0 AS build
+# Install required packages for System.DirectoryServices.Protocols
+RUN apt-get update && \
+    apt-get install -y libldap-2.5-0 libldap-common libsasl2-2 libsasl2-modules && \
+    apt-get clean && \
+    rm -rf /var/lib/apt/lists/*
+
+# This stage is used to build the service project
+FROM mcr.microsoft.com/dotnet/sdk:9.0 AS build
 ARG BUILD_CONFIGURATION=Release
+ARG BUILD_DATE=unknown
 WORKDIR /src
 COPY ["API/API.csproj", "API/"]
-RUN dotnet restore "./API/./API.csproj"
+RUN dotnet restore "./API/API.csproj"
 COPY . .
 WORKDIR "/src/API"
 RUN dotnet build "./API.csproj" -c $BUILD_CONFIGURATION -o /app/build
 
+# This stage is used to publish the service project to be copied to the final stage
 FROM build AS publish
 ARG BUILD_CONFIGURATION=Release
 RUN dotnet publish "./API.csproj" -c $BUILD_CONFIGURATION -o /app/publish /p:UseAppHost=false
 
+# This stage is used in production or when running from VS in regular mode (Default when not using the Debug configuration)
 FROM base AS final
+ARG BUILD_DATE=unknown
+LABEL org.label-schema.build-date=$BUILD_DATE
+
 WORKDIR /app
 COPY --from=publish /app/publish .
-COPY ["API/Templates", "/app/Templates"]
+
+# Set environment variables for container
+ENV DOTNET_RUNNING_IN_CONTAINER=true
+ENV DOTNET_USE_POLLING_FILE_WATCHER=1
+
+# Switch to non-root user
+USER $APP_UID
+
 ENTRYPOINT ["dotnet", "API.dll"]

@@ -1,0 +1,328 @@
+@page "/login"
+@using Blazor.Components
+@using Blazor.Services
+@inject AuthenticationService AuthService
+@inject NavigationManager Navigation
+
+<PageTitle>Log ind - VacationStay</PageTitle>
+
+<div class="modern-login-page">
+    <!-- Animated Background -->
+    <div class="login-background">
+        <div class="floating-shapes">
+            <div class="shape shape-1"></div>
+            <div class="shape shape-2"></div>
+            <div class="shape shape-3"></div>
+            <div class="shape shape-4"></div>
+            <div class="shape shape-5"></div>
+        </div>
+    </div>
+    
+    <div class="login-container">
+        <div class="login-content">
+            <!-- Brand Header -->
+            <div class="brand-header">
+                <div class="brand-icon">
+                    <i class="bi bi-airplane-fill"></i>
+                </div>
+                <h1 class="brand-title">🏖️ VacationStay</h1>
+                <p class="brand-subtitle">Your Dream Vacation Awaits</p>
+            </div>
+            
+            <!-- Login Form Container -->
+            <div class="form-container">
+                <LoginForm OnLoginSuccess="HandleLoginSuccess" />
+            </div>
+            
+            <!-- Footer -->
+            <div class="login-footer">
+                <a href="/" class="back-link">
+                    <i class="bi bi-arrow-left"></i>
+                    Tilbage til forsiden
+                </a>
+            </div>
+        </div>
+    </div>
+</div>
+
+<style>
+    .modern-login-page {
+        min-height: 100vh;
+        position: relative;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        padding: 2rem;
+        overflow: hidden;
+    }
+
+    /* Animated Background */
+    .login-background {
+        position: fixed;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
+        background: linear-gradient(135deg, #f0f9ff 0%, #e0f2fe 25%, #f0fdf4 50%, #fef3c7 75%, #fed7aa 100%);
+        z-index: -2;
+    }
+
+    .floating-shapes {
+        position: absolute;
+        width: 100%;
+        height: 100%;
+        overflow: hidden;
+    }
+
+    .shape {
+        position: absolute;
+        border-radius: 50%;
+        background: linear-gradient(135deg, rgba(99, 102, 241, 0.1), rgba(139, 92, 246, 0.1));
+        backdrop-filter: blur(10px);
+        animation: float 20s infinite linear;
+    }
+
+    .shape-1 {
+        width: 80px;
+        height: 80px;
+        top: 20%;
+        left: 10%;
+        animation-delay: 0s;
+        animation-duration: 25s;
+    }
+
+    .shape-2 {
+        width: 120px;
+        height: 120px;
+        top: 60%;
+        right: 10%;
+        animation-delay: -5s;
+        animation-duration: 30s;
+    }
+
+    .shape-3 {
+        width: 60px;
+        height: 60px;
+        top: 10%;
+        right: 20%;
+        animation-delay: -10s;
+        animation-duration: 20s;
+    }
+
+    .shape-4 {
+        width: 100px;
+        height: 100px;
+        bottom: 20%;
+        left: 20%;
+        animation-delay: -15s;
+        animation-duration: 35s;
+    }
+
+    .shape-5 {
+        width: 70px;
+        height: 70px;
+        top: 50%;
+        left: 50%;
+        animation-delay: -20s;
+        animation-duration: 28s;
+    }
+
+    @@keyframes float {
+        0% {
+            transform: translateY(0px) rotate(0deg);
+            opacity: 0;
+        }
+        10% {
+            opacity: 1;
+        }
+        90% {
+            opacity: 1;
+        }
+        100% {
+            transform: translateY(-100vh) rotate(360deg);
+            opacity: 0;
+        }
+    }
+
+    /* Login Container */
+    .login-container {
+        width: 100%;
+        max-width: 480px;
+        position: relative;
+        z-index: 1;
+    }
+
+    .login-content {
+        background: rgba(255, 255, 255, 0.95);
+        backdrop-filter: blur(30px);
+        border: 1px solid rgba(59, 130, 246, 0.2);
+        border-radius: 24px;
+        padding: 3rem;
+        box-shadow: 0 20px 60px rgba(59, 130, 246, 0.15);
+        animation: slideUp 0.8s cubic-bezier(0.4, 0, 0.2, 1);
+        position: relative;
+        overflow: hidden;
+    }
+
+    .login-content::before {
+        content: '';
+        position: absolute;
+        top: 0;
+        left: 0;
+        right: 0;
+        bottom: 0;
+        background: linear-gradient(135deg, 
+            rgba(59, 130, 246, 0.05) 0%, 
+            rgba(16, 185, 129, 0.03) 50%, 
+            rgba(249, 115, 22, 0.05) 100%);
+        pointer-events: none;
+        border-radius: 24px;
+    }
+
+    @@keyframes slideUp {
+        from {
+            opacity: 0;
+            transform: translateY(30px);
+        }
+        to {
+            opacity: 1;
+            transform: translateY(0);
+        }
+    }
+
+    /* Brand Header */
+    .brand-header {
+        text-align: center;
+        margin-bottom: 3rem;
+        position: relative;
+        z-index: 1;
+    }
+
+    .brand-icon {
+        width: 80px;
+        height: 80px;
+        margin: 0 auto 1.5rem;
+        background: linear-gradient(135deg, #3b82f6, #10b981);
+        border-radius: 20px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        box-shadow: 0 8px 32px rgba(59, 130, 246, 0.3);
+        animation: pulse 2s infinite;
+    }
+
+    .brand-icon i {
+        font-size: 2rem;
+        color: white;
+    }
+
+    @@keyframes pulse {
+        0%, 100% {
+            transform: scale(1);
+            box-shadow: 0 8px 32px rgba(99, 102, 241, 0.3);
+        }
+        50% {
+            transform: scale(1.05);
+            box-shadow: 0 12px 40px rgba(99, 102, 241, 0.5);
+        }
+    }
+
+    .brand-title {
+        font-size: 2.5rem;
+        font-weight: 800;
+        background: linear-gradient(135deg, #3b82f6, #10b981, #f97316);
+        -webkit-background-clip: text;
+        -webkit-text-fill-color: transparent;
+        background-clip: text;
+        margin-bottom: 0.5rem;
+        letter-spacing: -0.02em;
+    }
+
+    .brand-subtitle {
+        color: #3b82f6;
+        font-size: 1.1rem;
+        font-weight: 600;
+        margin-bottom: 0;
+        opacity: 0.8;
+    }
+
+    /* Form Container */
+    .form-container {
+        position: relative;
+        z-index: 1;
+    }
+
+    /* Footer */
+    .login-footer {
+        text-align: center;
+        margin-top: 2rem;
+        position: relative;
+        z-index: 1;
+    }
+
+    .back-link {
+        color: #94a3b8;
+        text-decoration: none;
+        font-weight: 500;
+        transition: all 0.3s ease;
+        display: inline-flex;
+        align-items: center;
+        gap: 0.5rem;
+        padding: 0.5rem 1rem;
+        border-radius: 12px;
+        border: 1px solid transparent;
+    }
+
+    .back-link:hover {
+        color: #e2e8f0;
+        background: rgba(99, 102, 241, 0.1);
+        border-color: rgba(99, 102, 241, 0.2);
+        transform: translateY(-1px);
+    }
+
+    /* Mobile Responsive */
+    @@media (max-width: 640px) {
+        .modern-login-page {
+            padding: 1rem;
+        }
+        
+        .login-content {
+            padding: 2rem 1.5rem;
+        }
+        
+        .brand-title {
+            font-size: 2rem;
+        }
+        
+        .brand-icon {
+            width: 60px;
+            height: 60px;
+        }
+        
+        .brand-icon i {
+            font-size: 1.5rem;
+        }
+        
+        .shape {
+            display: none; /* Hide floating shapes on mobile for performance */
+        }
+    }
+</style>
+
+@code {
+    protected override async Task OnInitializedAsync()
+    {
+        // Hvis brugeren allerede er logget ind, redirect til forsiden
+        if (await AuthService.IsAuthenticatedAsync())
+        {
+            Navigation.NavigateTo("/");
+        }
+    }
+
+    private async Task HandleLoginSuccess()
+    {
+        // Denne metode kaldes når login er succesfuldt
+        // Navigation sker allerede i LoginForm komponenten
+        await Task.CompletedTask;
+    }
+}

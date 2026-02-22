@@ -1,0 +1,81 @@
+meta {
+  name: Opretter en ny booking i systemet
+  type: http
+  seq: 1
+}
+
+post {
+  url: {{baseUrl}}/api/Bookings
+  body: json
+  auth: none
+}
+
+headers {
+  Authorization: Bearer {{JWT-User}}
+}
+
+body:json {
+  {
+    "userId": "{{user-id}}",
+    "roomId": "{{room-id}}",
+    "startDate": "{{start-date}}",
+    "endDate": "{{end-date}}",
+    "numberOfGuests": 2,
+    "specialRequests": "No"
+  }
+}
+
+script:pre-request {
+  // Sæt start- og slutdatoer
+  const today = new Date();
+  const tomorrow = new Date(today);
+  tomorrow.setDate(tomorrow.getDate() + 1);
+  
+  // Sæt tid til kl. 12:00 for begge datoer
+  today.setHours(12, 0, 0, 0);
+  tomorrow.setHours(12, 0, 0, 0);
+  
+  // Format datoerne som ISO 8601 med tid og timezone
+  const startDate = today.toISOString();
+  const endDate = tomorrow.toISOString();
+  
+  // Gem datoerne som miljøvariabler
+  bru.setEnvVar("start-date", startDate);
+  bru.setEnvVar("end-date", endDate);
+  
+  console.log("Start dato sat til: " + startDate);
+  console.log("Slut dato sat til: " + endDate);
+}
+
+script:post-response {
+  // Gem booking-relaterede variabler fra responset
+  try {
+    if (res.body && res.body.id) {
+      console.log("Created Booking ID: " + res.body.id);
+      bru.setEnvVar("booking-id", res.body.id);
+      console.log("Booking ID gemt som variabel: {{booking-id}}");
+      
+      // Gem andre nyttige variabler hvis de findes
+      if (res.body.roomId) {
+        bru.setEnvVar("room-id", res.body.roomId);
+        console.log("Room ID gemt som variabel: {{room-id}}");
+      }
+      
+      if (res.body.userId) {
+        bru.setEnvVar("user-id", res.body.userId);
+        console.log("User ID gemt som variabel: {{user-id}}");
+      }
+      
+      if (res.body.totalPrice) {
+        bru.setEnvVar("total-price", res.body.totalPrice);
+        console.log("Total Price gemt som variabel: {{total-price}}");
+      }
+      
+    } else {
+      console.log("Ingen ID fundet i responset");
+      console.log("Response body:", res.body);
+    }
+  } catch (error) {
+    console.log("Fejl ved håndtering af responset: " + error.message);
+  }
+}

@@ -1,0 +1,15 @@
+{
+  "version": "1",
+  "name": "API",
+  "type": "collection",
+  "ignore": [
+    "node_modules",
+    ".git"
+  ],
+  "size": 0.014374732971191406,
+  "filesCount": 48,
+  "presets": {
+    "requestType": "http",
+    "requestUrl": "https://25h2-mags.mercantec.tech/"
+  }
+}

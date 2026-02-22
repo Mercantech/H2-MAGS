@@ -1,0 +1,88 @@
+meta {
+  name: Get Ticket Statistics
+  type: http
+  seq: 9
+  description: |
+    Henter statistikker over ticket systemet.
+    Dette simulerer en manager der skal se performance metrics.
+    
+    Features tested:
+    - Ticket counts by status
+    - Priority distribution
+    - Service type distribution
+    - Average resolution time
+    - SLA compliance
+}
+
+get {
+  url: {{baseUrl}}/statistics
+  query: {
+    startDate: "2025-01-01"
+    endDate: "2025-12-31"
+    groupBy: "status,priority,serviceType"
+  }
+  auth: bearer
+}
+
+auth:bearer {
+  token: {{authToken}}
+}
+
+tests {
+  test("Status code is 200 OK", function() {
+    expect(res.getStatus()).to.equal(200);
+  });
+  
+  test("Response contains statistics data", function() {
+    expect(res.getBody()).to.have.property("data");
+    expect(res.getBody().data).to.be.an("object");
+  });
+  
+  test("Statistics contain ticket counts", function() {
+    const stats = res.getBody().data;
+    expect(stats).to.have.property("totalTickets");
+    expect(stats).to.have.property("openTickets");
+    expect(stats).to.have.property("closedTickets");
+    expect(stats).to.have.property("inProgressTickets");
+  });
+  
+  test("Statistics contain priority distribution", function() {
+    const stats = res.getBody().data;
+    expect(stats).to.have.property("priorityDistribution");
+    expect(stats.priorityDistribution).to.be.an("object");
+    
+    // Check that priority counts are numbers
+    Object.values(stats.priorityDistribution).forEach(count => {
+      expect(count).to.be.a("number");
+      expect(count).to.be.at.least(0);
+    });
+  });
+  
+  test("Statistics contain service type distribution", function() {
+    const stats = res.getBody().data;
+    expect(stats).to.have.property("serviceTypeDistribution");
+    expect(stats.serviceTypeDistribution).to.be.an("object");
+  });
+  
+  test("Statistics contain resolution time metrics", function() {
+    const stats = res.getBody().data;
+    expect(stats).to.have.property("averageResolutionTime");
+    expect(stats).to.have.property("slaCompliance");
+    
+    if (stats.averageResolutionTime) {
+      expect(stats.averageResolutionTime).to.be.a("number");
+      expect(stats.averageResolutionTime).to.be.at.least(0);
+    }
+  });
+  
+  test("Statistics contain recent activity", function() {
+    const stats = res.getBody().data;
+    expect(stats).to.have.property("ticketsCreatedToday");
+    expect(stats).to.have.property("ticketsClosedToday");
+    expect(stats).to.have.property("ticketsUpdatedToday");
+  });
+  
+  test("Response time is acceptable", function() {
+    expect(res.getResponseTime()).to.be.below(3000);
+  });
+}

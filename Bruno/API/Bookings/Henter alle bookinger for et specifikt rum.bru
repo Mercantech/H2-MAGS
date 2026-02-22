@@ -1,0 +1,26 @@
+meta {
+  name: Henter alle bookinger for et specifikt rum.
+  type: http
+  seq: 6
+}
+
+get {
+  url: {{baseUrl}}/api/Bookings/room/:roomId
+  body: none
+  auth: none
+}
+
+params:path {
+  roomId: {{room-id}}
+}
+
+headers {
+  Authorization: Bearer {{JWT-Admin}}
+}
+
+tests {
+  // Test status kode
+  test("Status kode skal være 200 No Content", function() {
+    expect(res.status).to.equal(200);
+  });
+}

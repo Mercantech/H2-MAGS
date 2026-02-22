@@ -1,0 +1,96 @@
+meta {
+  name: Get Ticket History
+  type: http
+  seq: 10
+  description: |
+    Henter ændringshistorik for et ticket.
+    Dette simulerer en support medarbejder der skal se hvad der er sket med ticketet.
+    
+    Features tested:
+    - Change history
+    - Audit trail
+    - User tracking
+    - Timestamp tracking
+}
+
+get {
+  url: {{baseUrl}}/{{ticketId}}/history
+  query: {
+    page: 1
+    pageSize: 50
+    sortBy: "createdAt"
+    sortOrder: "desc"
+  }
+  auth: bearer
+}
+
+auth:bearer {
+  token: {{authToken}}
+}
+
+tests {
+  test("Status code is 200 OK", function() {
+    expect(res.getStatus()).to.equal(200);
+  });
+  
+  test("Response contains history array", function() {
+    expect(res.getBody()).to.have.property("data");
+    expect(res.getBody().data).to.be.an("array");
+  });
+  
+  test("Response contains pagination info", function() {
+    expect(res.getBody()).to.have.property("pagination");
+    expect(res.getBody().pagination).to.have.property("page");
+    expect(res.getBody().pagination).to.have.property("pageSize");
+    expect(res.getBody().pagination).to.have.property("totalCount");
+  });
+  
+  test("History entries have required fields", function() {
+    if (res.getBody().data.length > 0) {
+      const entry = res.getBody().data[0];
+      expect(entry).to.have.property("id");
+      expect(entry).to.have.property("ticketId");
+      expect(entry).to.have.property("fieldName");
+      expect(entry).to.have.property("oldValue");
+      expect(entry).to.have.property("newValue");
+      expect(entry).to.have.property("changedBy");
+      expect(entry).to.have.property("changeReason");
+      expect(entry).to.have.property("createdAt");
+    }
+  });
+  
+  test("All history entries belong to the correct ticket", function() {
+    res.getBody().data.forEach(entry => {
+      expect(entry.ticketId).to.equal(ticketId);
+    });
+  });
+  
+  test("History entries are sorted by creation date (newest first)", function() {
+    if (res.getBody().data.length > 1) {
+      const entries = res.getBody().data;
+      for (let i = 0; i < entries.length - 1; i++) {
+        const current = new Date(entries[i].createdAt);
+        const next = new Date(entries[i + 1].createdAt);
+        expect(current.getTime()).to.be.at.least(next.getTime());
+      }
+    }
+  });
+  
+  test("History contains expected changes", function() {
+    const entries = res.getBody().data;
+    const fieldNames = entries.map(entry => entry.fieldName);
+    
+    // Should contain status changes
+    expect(fieldNames).to.include("Status");
+    
+    // Should contain priority changes
+    expect(fieldNames).to.include("Priority");
+    
+    // Should contain assignee changes
+    expect(fieldNames).to.include("Assignee");
+  });
+  
+  test("Response time is acceptable", function() {
+    expect(res.getResponseTime()).to.be.below(2000);
+  });
+}

@@ -1,0 +1,81 @@
+meta {
+  name: Get Ticket Attachments
+  type: http
+  seq: 19
+  description: |
+    Henter alle attachments for et specifikt ticket.
+    Dette simulerer en support medarbejder der skal se vedhæftede filer.
+    
+    Features tested:
+    - Attachment liste
+    - File information
+    - Bruger adgangskontrol
+    - Paginering
+}
+
+get {
+  url: {{baseUrl}}/{{ticketId}}/attachments
+  query: {
+    page: 1
+    pageSize: 20
+    sortBy: "createdAt"
+    sortOrder: "desc"
+  }
+  auth: bearer
+}
+
+auth:bearer {
+  token: {{authToken}}
+}
+
+tests {
+  test("Status code is 200 OK", function() {
+    expect(res.getStatus()).to.equal(200);
+  });
+  
+  test("Response contains attachments array", function() {
+    expect(res.getBody()).to.have.property("data");
+    expect(res.getBody().data).to.be.an("array");
+  });
+  
+  test("Response contains pagination info", function() {
+    expect(res.getBody()).to.have.property("pagination");
+    expect(res.getBody().pagination).to.have.property("page");
+    expect(res.getBody().pagination).to.have.property("pageSize");
+    expect(res.getBody().pagination).to.have.property("totalCount");
+  });
+  
+  test("Attachments have required fields", function() {
+    if (res.getBody().data.length > 0) {
+      const attachment = res.getBody().data[0];
+      expect(attachment).to.have.property("id");
+      expect(attachment).to.have.property("fileName");
+      expect(attachment).to.have.property("fileSize");
+      expect(attachment).to.have.property("mimeType");
+      expect(attachment).to.have.property("ticketId");
+      expect(attachment).to.have.property("uploadedBy");
+      expect(attachment).to.have.property("createdAt");
+    }
+  });
+  
+  test("All attachments belong to the correct ticket", function() {
+    res.getBody().data.forEach(attachment => {
+      expect(attachment.ticketId).to.equal(ticketId);
+    });
+  });
+  
+  test("Attachments are sorted by creation date (newest first)", function() {
+    if (res.getBody().data.length > 1) {
+      const attachments = res.getBody().data;
+      for (let i = 0; i < attachments.length - 1; i++) {
+        const current = new Date(attachments[i].createdAt);
+        const next = new Date(attachments[i + 1].createdAt);
+        expect(current.getTime()).to.be.at.least(next.getTime());
+      }
+    }
+  });
+  
+  test("Response time is acceptable", function() {
+    expect(res.getResponseTime()).to.be.below(2000);
+  });
+}

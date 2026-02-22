@@ -1,0 +1,31 @@
+meta {
+  name: Henter detaljeret tilgængelighedsinfo for et specifikt rum i en given periode.
+  type: http
+  seq: 8
+}
+
+get {
+  url: {{baseUrl}}/api/Bookings/room-availability/:roomId?checkInDate={{start-date}}&checkOutDate={{end-date}}
+  body: none
+  auth: none
+}
+
+params:query {
+  checkInDate: {{start-date}}
+  checkOutDate: {{end-date}}
+}
+
+params:path {
+  roomId: {{room-id}}
+}
+
+headers {
+  Authorization: Bearer {{JWT-Admin}}
+}
+
+tests {
+  // Test status kode
+  test("Status kode skal være 200 No Content", function() {
+    expect(res.status).to.equal(200);
+  });
+}

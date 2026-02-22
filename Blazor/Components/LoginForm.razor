@@ -1,0 +1,503 @@
+@using DomainModels
+@using Blazor.Services
+@inject AuthenticationService AuthService
+@inject NavigationManager Navigation
+
+<div class="vacation-login-container">
+    <div class="card vacation-card">
+        <div class="card-header vacation-header">
+            <h3><i class="bi bi-airplane-engines me-2"></i>Log ind til din ferie</h3>
+        </div>
+        <div class="card-body">
+            @if (!string.IsNullOrEmpty(errorMessage))
+            {
+                <div class="alert alert-danger" role="alert">
+                    @errorMessage
+                    @if (remainingLockoutSeconds > 0)
+                    {
+                        <br />
+                        <small>Prøv igen om @remainingLockoutSeconds sekunder</small>
+                    }
+                </div>
+            }
+
+            @if (!string.IsNullOrEmpty(successMessage))
+            {
+                <div class="alert alert-success" role="alert">
+                    @successMessage
+                </div>
+            }
+
+            <EditForm Model="@loginModel" OnValidSubmit="@HandleLogin">
+                <DataAnnotationsValidator />
+                <ValidationSummary class="text-danger" />
+
+                <div class="form-group mb-3">
+                    <label for="email" class="form-label">Email</label>
+                    <InputText id="email" @bind-Value="loginModel.Email" class="form-control" placeholder="din@email.dk" disabled="@isLoading" />
+                    <ValidationMessage For="@(() => loginModel.Email)" class="text-danger" />
+                </div>
+
+                <div class="form-group mb-3">
+                    <label for="password" class="form-label">Adgangskode</label>
+                    <InputText id="password" type="password" @bind-Value="loginModel.Password" class="form-control" placeholder="Din adgangskode" disabled="@isLoading" />
+                    <ValidationMessage For="@(() => loginModel.Password)" class="text-danger" />
+                </div>
+
+                <div class="form-group mb-3">
+                    <button type="submit" class="btn btn-primary w-100" disabled="@isLoading">
+                        @if (isLoading)
+                        {
+                            <span class="spinner-border spinner-border-sm me-2" role="status" aria-hidden="true"></span>
+                            <text>Logger ind...</text>
+                        }
+                        else
+                        {
+                            <text>Log ind</text>
+                        }
+                    </button>
+                </div>
+            </EditForm>
+
+            <div class="text-center">
+                <small class="text-muted">
+                    Har du ikke en konto? 
+                    <button class="btn btn-link p-0" @onclick="ShowRegister" disabled="@isLoading">
+                        Opret en her
+                    </button>
+                </small>
+            </div>
+        </div>
+    </div>
+
+    @if (showRegisterForm)
+    {
+        <div class="card mt-3">
+            <div class="card-header">
+                <h3>Opret ny konto</h3>
+            </div>
+            <div class="card-body">
+                <EditForm Model="@registerModel" OnValidSubmit="@HandleRegister">
+                    <DataAnnotationsValidator />
+                    <ValidationSummary class="text-danger" />
+
+                    <div class="form-group mb-3">
+                        <label for="reg-email" class="form-label">Email</label>
+                        <InputText id="reg-email" @bind-Value="registerModel.Email" class="form-control" placeholder="din@email.dk" disabled="@isLoading" />
+                        <ValidationMessage For="@(() => registerModel.Email)" class="text-danger" />
+                    </div>
+
+                    <div class="form-group mb-3">
+                        <label for="reg-username" class="form-label">Brugernavn</label>
+                        <InputText id="reg-username" @bind-Value="registerModel.Username" class="form-control" placeholder="Dit brugernavn" disabled="@isLoading" />
+                        <ValidationMessage For="@(() => registerModel.Username)" class="text-danger" />
+                    </div>
+
+                    <div class="form-group mb-3">
+                        <label for="reg-password" class="form-label">Adgangskode</label>
+                        <InputText id="reg-password" type="password" @bind-Value="registerModel.Password" class="form-control" placeholder="Din adgangskode" disabled="@isLoading" />
+                        <ValidationMessage For="@(() => registerModel.Password)" class="text-danger" />
+                    </div>
+
+                    <div class="form-group mb-3">
+                        <button type="submit" class="btn btn-success w-100" disabled="@isLoading">
+                            @if (isLoading)
+                            {
+                                <span class="spinner-border spinner-border-sm me-2" role="status" aria-hidden="true"></span>
+                                <text>Opretter konto...</text>
+                            }
+                            else
+                            {
+                                <text>Opret konto</text>
+                            }
+                        </button>
+                    </div>
+                </EditForm>
+
+                <div class="text-center">
+                    <button class="btn btn-link" @onclick="HideRegister" disabled="@isLoading">
+                        Tilbage til login
+                    </button>
+                </div>
+            </div>
+        </div>
+    }
+</div>
+
+<style>
+    .vacation-login-container {
+        width: 100%;
+        max-width: 480px;
+        margin: 0 auto;
+    }
+
+    .vacation-card {
+        background: rgba(255, 255, 255, 0.95);
+        border: 1px solid rgba(59, 130, 246, 0.2);
+        border-radius: 24px;
+        box-shadow: 0 20px 40px rgba(59, 130, 246, 0.1);
+        backdrop-filter: blur(20px);
+        overflow: hidden;
+    }
+
+    .vacation-header {
+        background: linear-gradient(135deg, #e0f2fe, #f0fdf4);
+        border: none;
+        padding: 2rem;
+        text-align: center;
+        border-bottom: 1px solid rgba(59, 130, 246, 0.1);
+    }
+
+    .vacation-header h3 {
+        font-size: 1.75rem;
+        font-weight: 700;
+        color: #1c1917;
+        margin: 0 0 0.5rem 0;
+        background: linear-gradient(135deg, #3b82f6, #10b981);
+        -webkit-background-clip: text;
+        -webkit-text-fill-color: transparent;
+        background-clip: text;
+    }
+
+    .card-body {
+        padding: 2rem;
+        background: transparent;
+        color: #1c1917;
+    }
+
+    /* Vacation Form Styling */
+    .form-group {
+        position: relative;
+        margin-bottom: 2rem;
+    }
+
+    .form-label {
+        font-weight: 600;
+        color: #1c1917;
+        font-size: 0.9rem;
+        margin-bottom: 0.75rem;
+        display: block;
+        text-transform: uppercase;
+        letter-spacing: 0.05em;
+    }
+
+    .form-control {
+        background: rgba(255, 255, 255, 0.9);
+        border: 2px solid rgba(59, 130, 246, 0.2);
+        border-radius: 16px;
+        color: #1c1917;
+        font-size: 1rem;
+        padding: 1rem 1.5rem;
+        transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+        backdrop-filter: blur(10px);
+        height: auto;
+    }
+
+    .form-control:focus {
+        background: rgba(255, 255, 255, 1);
+        border-color: #3b82f6;
+        box-shadow: 0 0 0 4px rgba(59, 130, 246, 0.1);
+        color: #1c1917;
+        outline: none;
+    }
+
+    .form-control::placeholder {
+        color: #6b7280;
+        font-weight: 400;
+    }
+
+    /* Modern Button Styling */
+    .btn {
+        border-radius: 16px;
+        font-weight: 600;
+        padding: 1rem 2rem;
+        font-size: 1rem;
+        transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+        border: none;
+        position: relative;
+        overflow: hidden;
+        text-transform: uppercase;
+        letter-spacing: 0.05em;
+    }
+
+    .btn::before {
+        content: '';
+        position: absolute;
+        top: 0;
+        left: -100%;
+        width: 100%;
+        height: 100%;
+        background: linear-gradient(90deg, transparent, rgba(255,255,255,0.2), transparent);
+        transition: left 0.5s;
+    }
+
+    .btn:hover::before {
+        left: 100%;
+    }
+
+    .btn-primary {
+        background: linear-gradient(135deg, #3b82f6, #10b981);
+        box-shadow: 0 4px 20px rgba(59, 130, 246, 0.4);
+        color: white;
+    }
+
+    .btn-primary:hover:not(:disabled) {
+        background: linear-gradient(135deg, #2563eb, #059669);
+        transform: translateY(-2px);
+        box-shadow: 0 8px 30px rgba(59, 130, 246, 0.6);
+    }
+
+    .btn-primary:disabled {
+        background: linear-gradient(135deg, #64748b, #475569);
+        box-shadow: none;
+        cursor: not-allowed;
+        transform: none;
+    }
+
+    .btn-success {
+        background: linear-gradient(135deg, #10b981, #f97316);
+        box-shadow: 0 4px 20px rgba(16, 185, 129, 0.4);
+        color: white;
+    }
+
+    .btn-success:hover:not(:disabled) {
+        background: linear-gradient(135deg, #059669, #ea580c);
+        transform: translateY(-2px);
+        box-shadow: 0 8px 30px rgba(16, 185, 129, 0.6);
+    }
+
+    .btn-link {
+        color: #3b82f6;
+        text-decoration: none;
+        font-weight: 500;
+        font-size: 0.9rem;
+        transition: all 0.3s ease;
+        padding: 0.5rem;
+        border-radius: 8px;
+    }
+
+    .btn-link:hover {
+        color: #2563eb;
+        background: rgba(59, 130, 246, 0.1);
+        text-decoration: none;
+        transform: translateY(-1px);
+    }
+
+    /* Vacation Alert Styling */
+    .alert {
+        border-radius: 16px;
+        border: none;
+        padding: 1.25rem 1.5rem;
+        margin-bottom: 2rem;
+        font-weight: 500;
+        backdrop-filter: blur(10px);
+    }
+
+    .alert-danger {
+        background: rgba(239, 68, 68, 0.1);
+        color: #dc2626;
+        border: 1px solid rgba(239, 68, 68, 0.2);
+    }
+
+    .alert-success {
+        background: rgba(16, 185, 129, 0.1);
+        color: #047857;
+        border: 1px solid rgba(16, 185, 129, 0.2);
+    }
+
+    /* Spinner Animation */
+    .spinner-border-sm {
+        width: 1rem;
+        height: 1rem;
+        animation: spin 1s linear infinite;
+    }
+
+    @@keyframes spin {
+        0% { transform: rotate(0deg); }
+        100% { transform: rotate(360deg); }
+    }
+
+    /* Validation Messages */
+    .validation-message,
+    .text-danger {
+        color: #fca5a5;
+        font-size: 0.85rem;
+        margin-top: 0.5rem;
+        font-weight: 500;
+    }
+
+    /* Form Transitions */
+    .form-group {
+        animation: slideInUp 0.6s cubic-bezier(0.4, 0, 0.2, 1);
+        animation-fill-mode: both;
+    }
+
+    .form-group:nth-child(1) { animation-delay: 0.1s; }
+    .form-group:nth-child(2) { animation-delay: 0.2s; }
+    .form-group:nth-child(3) { animation-delay: 0.3s; }
+    .form-group:nth-child(4) { animation-delay: 0.4s; }
+
+    @@keyframes slideInUp {
+        from {
+            opacity: 0;
+            transform: translateY(20px);
+        }
+        to {
+            opacity: 1;
+            transform: translateY(0);
+        }
+    }
+
+    /* Register Form Styling */
+    .text-center small {
+        color: #94a3b8;
+        font-size: 0.9rem;
+    }
+
+    /* Mobile Responsive */
+    @@media (max-width: 640px) {
+        .form-control {
+            padding: 0.875rem 1.25rem;
+            font-size: 0.95rem;
+        }
+        
+        .btn {
+            padding: 0.875rem 1.5rem;
+            font-size: 0.95rem;
+        }
+        
+        .card-header h3 {
+            font-size: 1.5rem;
+        }
+    }
+</style>
+
+@code {
+    private LoginDto loginModel = new();
+    private RegisterDto registerModel = new();
+    private bool isLoading = false;
+    private string errorMessage = string.Empty;
+    private string successMessage = string.Empty;
+    private bool showRegisterForm = false;
+    private int remainingLockoutSeconds = 0;
+
+    [Parameter] public EventCallback OnLoginSuccess { get; set; }
+
+    protected override async Task OnInitializedAsync()
+    {
+        // Tjek om brugeren allerede er logget ind
+        if (await AuthService.IsAuthenticatedAsync())
+        {
+            Navigation.NavigateTo("/");
+        }
+    }
+
+    private async Task HandleLogin()
+    {
+        isLoading = true;
+        errorMessage = string.Empty;
+        successMessage = string.Empty;
+        remainingLockoutSeconds = 0;
+        StateHasChanged();
+
+        try
+        {
+            var result = await AuthService.LoginAsync(loginModel);
+            
+            if (result.Success)
+            {
+                successMessage = "Login succesfuldt! Omdirigerer...";
+                StateHasChanged();
+                
+                // Vent kort så brugeren kan se success besked
+                await Task.Delay(1000);
+                
+                // Trigger event for parent component
+                await OnLoginSuccess.InvokeAsync();
+                
+                // Naviger til forsiden
+                Navigation.NavigateTo("/");
+            }
+            else
+            {
+                errorMessage = result.Message;
+                remainingLockoutSeconds = result.RemainingLockoutSeconds;
+                
+                if (result.DelayApplied > 0)
+                {
+                    errorMessage += $" (Forsinkelse på {result.DelayApplied} sekunder blev anvendt)";
+                }
+            }
+        }
+        catch (Exception ex)
+        {
+            errorMessage = "Der opstod en uventet fejl. Prøv igen.";
+            Console.WriteLine($"Login fejl: {ex.Message}");
+        }
+        finally
+        {
+            isLoading = false;
+            StateHasChanged();
+        }
+    }
+
+    private async Task HandleRegister()
+    {
+        isLoading = true;
+        errorMessage = string.Empty;
+        successMessage = string.Empty;
+        StateHasChanged();
+
+        try
+        {
+            // Lav HTTP request direkte da vi ikke har en APIService metode til registrering
+            using var httpClient = new HttpClient();
+            httpClient.BaseAddress = new Uri("https://25h2-mags.mercantec.tech/");
+            
+            var response = await httpClient.PostAsJsonAsync("api/users/register", registerModel);
+            
+            if (response.IsSuccessStatusCode)
+            {
+                successMessage = "Konto oprettet succesfuldt! Du kan nu logge ind.";
+                showRegisterForm = false;
+                var currentEmail = registerModel.Email; // Gem email før reset
+                registerModel = new RegisterDto(); // Reset form
+                
+                // Kopier email til login form
+                loginModel.Email = currentEmail;
+            }
+            else
+            {
+                var errorContent = await response.Content.ReadAsStringAsync();
+                errorMessage = errorContent.Contains("email findes allerede") 
+                    ? "En bruger med denne email findes allerede." 
+                    : "Der opstod en fejl ved oprettelse af kontoen.";
+            }
+        }
+        catch (Exception ex)
+        {
+            errorMessage = "Der opstod en uventet fejl. Prøv igen.";
+            Console.WriteLine($"Registrering fejl: {ex.Message}");
+        }
+        finally
+        {
+            isLoading = false;
+            StateHasChanged();
+        }
+    }
+
+    private void ShowRegister()
+    {
+        showRegisterForm = true;
+        errorMessage = string.Empty;
+        successMessage = string.Empty;
+    }
+
+    private void HideRegister()
+    {
+        showRegisterForm = false;
+        errorMessage = string.Empty;
+        successMessage = string.Empty;
+        registerModel = new RegisterDto(); // Reset form
+    }
+}

@@ -1,0 +1,81 @@
+meta {
+  name: Get Ticket Comments
+  type: http
+  seq: 6
+  description: |
+    Henter alle kommentarer for et specifikt ticket.
+    Dette simulerer en support medarbejder der skal se chat historikken.
+    
+    Features tested:
+    - Kommentar liste
+    - Paginering
+    - Sortering
+    - Bruger adgangskontrol
+}
+
+get {
+  url: {{baseUrl}}/{{ticketId}}/comments
+  query: {
+    page: 1
+    pageSize: 20
+    sortBy: "createdAt"
+    sortOrder: "asc"
+  }
+  auth: bearer
+}
+
+auth:bearer {
+  token: {{authToken}}
+}
+
+tests {
+  test("Status code is 200 OK", function() {
+    expect(res.getStatus()).to.equal(200);
+  });
+  
+  test("Response contains comments array", function() {
+    expect(res.getBody()).to.have.property("data");
+    expect(res.getBody().data).to.be.an("array");
+  });
+  
+  test("Response contains pagination info", function() {
+    expect(res.getBody()).to.have.property("pagination");
+    expect(res.getBody().pagination).to.have.property("page");
+    expect(res.getBody().pagination).to.have.property("pageSize");
+    expect(res.getBody().pagination).to.have.property("totalCount");
+  });
+  
+  test("Comments have required fields", function() {
+    if (res.getBody().data.length > 0) {
+      const comment = res.getBody().data[0];
+      expect(comment).to.have.property("id");
+      expect(comment).to.have.property("comment");
+      expect(comment).to.have.property("authorId");
+      expect(comment).to.have.property("authorName");
+      expect(comment).to.have.property("ticketId");
+      expect(comment).to.have.property("isInternal");
+      expect(comment).to.have.property("createdAt");
+    }
+  });
+  
+  test("Comments are sorted by creation date (oldest first)", function() {
+    if (res.getBody().data.length > 1) {
+      const comments = res.getBody().data;
+      for (let i = 0; i < comments.length - 1; i++) {
+        const current = new Date(comments[i].createdAt);
+        const next = new Date(comments[i + 1].createdAt);
+        expect(current.getTime()).to.be.at.most(next.getTime());
+      }
+    }
+  });
+  
+  test("All comments belong to the correct ticket", function() {
+    res.getBody().data.forEach(comment => {
+      expect(comment.ticketId).to.equal(ticketId);
+    });
+  });
+  
+  test("Response time is acceptable", function() {
+    expect(res.getResponseTime()).to.be.below(2000);
+  });
+}

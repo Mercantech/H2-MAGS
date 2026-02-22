@@ -1,71 +1,100 @@
-﻿using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
+using API.Data;
 using Microsoft.EntityFrameworkCore;
-using System;
-using API.DBContext;
-using API.Services;
 
 namespace API.Controllers
 {
     /// <summary>
-    /// API-controller til status-tjek af server, database og Active Directory.
+    /// Controller til håndtering af systemstatus og sundhedstjek.
     /// </summary>
-    [Route("api/[controller]")]
     [ApiController]
+    [Route("api/[controller]")]
     public class StatusController : ControllerBase
     {
-        private readonly HotelContext _context;
-        private readonly ActiveDirectoryService _adService;
+        private readonly AppDBContext _context;
 
-        public StatusController(HotelContext context, ActiveDirectoryService adService)
+        /// <summary>
+        /// Initialiserer en ny instans af StatusController.
+        /// </summary>
+        /// <param name="context">Database kontekst til adgang til data.</param>
+        public StatusController(AppDBContext context)
         {
             _context = context;
-            _adService = adService;
+        }
+        /// <summary>
+        /// Tjekker om API'en kører korrekt.
+        /// </summary>
+        /// <returns>Status og besked om API'ens tilstand.</returns>
+        /// <response code="200">API'en er kørende.</response>
+        [HttpGet("healthcheck")]
+        public IActionResult HealthCheck()
+        {
+            return Ok(new { status = "OK", message = "API'en er kørende!" });
         }
 
         /// <summary>
-        /// Tjekker om serveren kører.
+        /// Tjekker om databasen er tilgængelig (dummy indtil EFCore er sat op).
         /// </summary>
-        /// <returns>En tekstbesked om serverstatus.</returns>
-        [HttpGet]
-        public IActionResult GetStatus()
+        /// <returns>Status og besked om databaseforbindelse.</returns>
+        /// <response code="200">Database er kørende eller fejlbesked gives.</response>
+    
+        [HttpGet("dbhealthcheck")]
+        public async Task<IActionResult> DBHealthCheck()
         {
-            return Ok("The server is Live");
-        }
-
-        /// <summary>
-        /// Tjekker om serveren og databasen er tilgængelige.
-        /// </summary>
-        /// <returns>En tekstbesked om database- og serverstatus.</returns>
-        /// <response code="200">Database og server er tilgængelige.</response>
-        /// <response code="404">Database er ikke tilgængelig.</response>
-        [HttpGet("DB")]
-        public IActionResult GetStatusDB()
-        {
-            if (_context.Database.CanConnect())
+            try 
             {
-                return Ok("The database and Server is Live!");
-            }
-            else return NotFound();
-        }
-
-        /// <summary>
-        /// Tjekker om Active Directory-forbindelsen virker.
-        /// </summary>
-        /// <returns>Et objekt med status for AD-forbindelsen.</returns>
-        /// <response code="200">AD-forbindelsen virker.</response>
-        /// <response code="500">Fejl ved kontrol af AD-forbindelse.</response>
-        [HttpGet("AD")]
-        public IActionResult GetStatusAD()
-        {
-            try
-            {
-                bool isConnected = _adService.ValidateUser("dummy", "ToTest1234!");
-                return Ok(new { Connected = isConnected });
+                // Tjek om vi kan forbinde til databasen
+                await _context.Database.CanConnectAsync();
+                return Ok(new { status = "OK", message = "Database er kørende!" });
             }
             catch (Exception ex)
             {
-                return StatusCode(500, $"Fejl ved kontrol af AD-forbindelse: {ex.Message}");
+                return Ok(new { status = "Error", message = "Fejl ved forbindelse til database: " + ex.Message });
+            }
+        }
+
+        /// <summary>
+        /// Simpelt ping-endpoint til at teste API'en.
+        /// </summary>
+        /// <returns>Status og "Pong" besked.</returns>
+        /// <response code="200">API'en svarede med Pong.</response>
+        [HttpGet("ping")]
+        public IActionResult Ping()
+        {
+            return Ok(new { status = "OK", message = "Pong 🏓" });
+        }
+
+        /// <summary>
+        /// Henter antal rækker i alle hovedtabeller.
+        /// </summary>
+        /// <returns>Antal rækker i Hotels, Users, Rooms og Bookings tabellerne.</returns>
+        /// <response code="200">Returnerer antal rækker i hver tabel.</response>
+        [HttpGet("tablecount")]
+        public async Task<IActionResult> GetTableCount()
+        {
+            try
+            {
+                var hotelCount = await _context.Hotels.CountAsync();
+                var userCount = await _context.Users.CountAsync();
+                var roomCount = await _context.Rooms.CountAsync();
+                var bookingCount = await _context.Bookings.CountAsync();
+
+                return Ok(new 
+                { 
+                    status = "OK",
+                    hotels = hotelCount,
+                    users = userCount,
+                    rooms = roomCount,
+                    bookings = bookingCount
+                });
+            }
+            catch (Exception ex)
+            {
+                return StatusCode(500, new 
+                { 
+                    status = "Error", 
+                    message = "Fejl ved hentning af tabel antal: " + ex.Message 
+                });
             }
         }
     }

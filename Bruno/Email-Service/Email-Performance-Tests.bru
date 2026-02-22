@@ -1,0 +1,311 @@
+meta {
+  name: Email Performance Tests
+  type: http
+  version: 1
+}
+
+vars {
+  baseUrl: http://localhost:8045
+  adminToken: 
+  testEmail: test@example.com
+}
+
+env {
+  H2-MAGS-Email {
+    baseUrl: http://localhost:8045
+    adminToken: 
+    testEmail: test@example.com
+  }
+}
+
+// Test email sending performance
+post {
+  name: Test Email Sending Performance
+  url: {{baseUrl}}/api/users/test-email?testEmail={{testEmail}}
+  headers {
+    Authorization: Bearer {{adminToken}}
+  }
+}
+
+tests {
+  test("Should send email within acceptable time", function() {
+    expect(res.getStatus()).to.equal(200);
+    expect(res.getResponseTime()).to.be.below(5000); // Under 5 sekunder
+    expect(res.getBody().emailSent).to.equal(true);
+  });
+  
+  test("Should have reasonable response time", function() {
+    expect(res.getResponseTime()).to.be.below(10000); // Under 10 sekunder
+  });
+}
+
+// Test concurrent email sending
+post {
+  name: Test Concurrent Email Sending 1
+  url: {{baseUrl}}/api/users/test-email?testEmail=concurrent1@example.com
+  headers {
+    Authorization: Bearer {{adminToken}}
+  }
+}
+
+tests {
+  test("Should handle concurrent email sending 1", function() {
+    expect(res.getStatus()).to.equal(200);
+    expect(res.getBody().emailSent).to.equal(true);
+  });
+}
+
+post {
+  name: Test Concurrent Email Sending 2
+  url: {{baseUrl}}/api/users/test-email?testEmail=concurrent2@example.com
+  headers {
+    Authorization: Bearer {{adminToken}}
+  }
+}
+
+tests {
+  test("Should handle concurrent email sending 2", function() {
+    expect(res.getStatus()).to.equal(200);
+    expect(res.getBody().emailSent).to.equal(true);
+  });
+}
+
+post {
+  name: Test Concurrent Email Sending 3
+  url: {{baseUrl}}/api/users/test-email?testEmail=concurrent3@example.com
+  headers {
+    Authorization: Bearer {{adminToken}}
+  }
+}
+
+tests {
+  test("Should handle concurrent email sending 3", function() {
+    expect(res.getStatus()).to.equal(200);
+    expect(res.getBody().emailSent).to.equal(true);
+  });
+}
+
+// Test email template generation performance
+post {
+  name: Test Template Generation Performance
+  url: {{baseUrl}}/api/users/test-email-template
+  headers {
+    Content-Type: application/json
+    Authorization: Bearer {{adminToken}}
+  }
+  body:json {
+    {
+      "templateType": "welcome",
+      "testData": {
+        "username": "PerformanceTestUser",
+        "role": "User"
+      }
+    }
+  }
+}
+
+tests {
+  test("Should generate template quickly", function() {
+    expect(res.getStatus()).to.equal(200);
+    expect(res.getResponseTime()).to.be.below(1000); // Under 1 sekund
+    expect(res.getBody().htmlContent).to.exist;
+  });
+}
+
+// Test booking email performance
+post {
+  name: Test Booking Email Performance
+  url: {{baseUrl}}/api/bookings
+  headers {
+    Content-Type: application/json
+    Authorization: Bearer {{adminToken}}
+  }
+  body:json {
+    {
+      "userId": "performance-test-user",
+      "roomId": "performance-test-room",
+      "startDate": "2025-02-01",
+      "endDate": "2025-02-03",
+      "numberOfGuests": 2
+    }
+  }
+}
+
+tests {
+  test("Should create booking and send email within acceptable time", function() {
+    expect(res.getStatus()).to.equal(201);
+    expect(res.getResponseTime()).to.be.below(8000); // Under 8 sekunder
+    expect(res.getBody().emailSent).to.equal(true);
+  });
+}
+
+// Test email med stor HTML content
+post {
+  name: Test Large HTML Content Performance
+  url: {{baseUrl}}/api/users/test-email-template
+  headers {
+    Content-Type: application/json
+    Authorization: Bearer {{adminToken}}
+  }
+  body:json {
+    {
+      "templateType": "bookingConfirmation",
+      "testData": {
+        "username": "LargeContentPerformanceTestUser",
+        "roomNumber": "999",
+        "hotelName": "Very Long Hotel Name That Should Test HTML Rendering Performance",
+        "startDate": "2025-02-01",
+        "endDate": "2025-02-10",
+        "numberOfGuests": 10,
+        "totalPrice": 15000.00,
+        "bookingId": "large-content-performance-test-booking-123456789"
+      }
+    }
+  }
+}
+
+tests {
+  test("Should handle large HTML content efficiently", function() {
+    expect(res.getStatus()).to.equal(200);
+    expect(res.getResponseTime()).to.be.below(2000); // Under 2 sekunder
+    expect(res.getBody().htmlContent).to.exist;
+    expect(res.getBody().htmlContent.length).to.be.greaterThan(1000);
+  });
+}
+
+// Test email sending under load
+post {
+  name: Test Email Under Load 1
+  url: {{baseUrl}}/api/users/test-email?testEmail=load1@example.com
+  headers {
+    Authorization: Bearer {{adminToken}}
+  }
+}
+
+tests {
+  test("Should handle email under load 1", function() {
+    expect(res.getStatus()).to.equal(200);
+    expect(res.getBody().emailSent).to.equal(true);
+  });
+}
+
+post {
+  name: Test Email Under Load 2
+  url: {{baseUrl}}/api/users/test-email?testEmail=load2@example.com
+  headers {
+    Authorization: Bearer {{adminToken}}
+  }
+}
+
+tests {
+  test("Should handle email under load 2", function() {
+    expect(res.getStatus()).to.equal(200);
+    expect(res.getBody().emailSent).to.equal(true);
+  });
+}
+
+post {
+  name: Test Email Under Load 3
+  url: {{baseUrl}}/api/users/test-email?testEmail=load3@example.com
+  headers {
+    Authorization: Bearer {{adminToken}}
+  }
+}
+
+tests {
+  test("Should handle email under load 3", function() {
+    expect(res.getStatus()).to.equal(200);
+    expect(res.getBody().emailSent).to.equal(true);
+  });
+}
+
+post {
+  name: Test Email Under Load 4
+  url: {{baseUrl}}/api/users/test-email?testEmail=load4@example.com
+  headers {
+    Authorization: Bearer {{adminToken}}
+  }
+}
+
+tests {
+  test("Should handle email under load 4", function() {
+    expect(res.getStatus()).to.equal(200);
+    expect(res.getBody().emailSent).to.equal(true);
+  });
+}
+
+post {
+  name: Test Email Under Load 5
+  url: {{baseUrl}}/api/users/test-email?testEmail=load5@example.com
+  headers {
+    Authorization: Bearer {{adminToken}}
+  }
+}
+
+tests {
+  test("Should handle email under load 5", function() {
+    expect(res.getStatus()).to.equal(200);
+    expect(res.getBody().emailSent).to.equal(true);
+  });
+}
+
+// Test email med forskellige størrelser
+post {
+  name: Test Small Email Performance
+  url: {{baseUrl}}/api/users/test-email?testEmail=small@example.com
+  headers {
+    Authorization: Bearer {{adminToken}}
+  }
+}
+
+tests {
+  test("Should handle small email efficiently", function() {
+    expect(res.getStatus()).to.equal(200);
+    expect(res.getResponseTime()).to.be.below(3000); // Under 3 sekunder
+    expect(res.getBody().emailSent).to.equal(true);
+  });
+}
+
+// Test email med special characters performance
+post {
+  name: Test Special Characters Email Performance
+  url: {{baseUrl}}/api/users/test-email?testEmail=special@example.com
+  headers {
+    Authorization: Bearer {{adminToken}}
+  }
+}
+
+tests {
+  test("Should handle special characters email efficiently", function() {
+    expect(res.getStatus()).to.equal(200);
+    expect(res.getResponseTime()).to.be.below(4000); // Under 4 sekunder
+    expect(res.getBody().emailSent).to.equal(true);
+  });
+}
+
+// Test email template caching performance
+post {
+  name: Test Template Caching Performance
+  url: {{baseUrl}}/api/users/test-email-template
+  headers {
+    Content-Type: application/json
+    Authorization: Bearer {{adminToken}}
+  }
+  body:json {
+    {
+      "templateType": "welcome",
+      "testData": {
+        "username": "CachingTestUser",
+        "role": "User"
+      }
+    }
+  }
+}
+
+tests {
+  test("Should cache template efficiently", function() {
+    expect(res.getStatus()).to.equal(200);
+    expect(res.getResponseTime()).to.be.below(500); // Under 0.5 sekunder
+    expect(res.getBody().htmlContent).to.exist;
+  });
+}
